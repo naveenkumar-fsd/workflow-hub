@@ -1,13 +1,20 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from "react";
+import { loginUser } from "@/api/authService";
 
-export type UserRole = 'employee' | 'manager' | 'hr' | 'admin';
+export type UserRole = "employee" | "manager" | "hr" | "admin";
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
-  department: string;
+  department?: string;
   avatar?: string;
 }
 
@@ -21,67 +28,63 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demonstration
-const mockUsers: Record<UserRole, User> = {
-  employee: {
-    id: '1',
-    name: 'John Smith',
-    email: 'john.smith@company.com',
-    role: 'employee',
-    department: 'Engineering',
-    avatar: undefined,
-  },
-  manager: {
-    id: '2',
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@company.com',
-    role: 'manager',
-    department: 'Engineering',
-    avatar: undefined,
-  },
-  hr: {
-    id: '3',
-    name: 'Emily Davis',
-    email: 'emily.davis@company.com',
-    role: 'hr',
-    department: 'Human Resources',
-    avatar: undefined,
-  },
-  admin: {
-    id: '4',
-    name: 'Michael Chen',
-    email: 'michael.chen@company.com',
-    role: 'admin',
-    department: 'IT Administration',
-    avatar: undefined,
-  },
-};
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('workflowpro_user');
+    const stored = localStorage.getItem("workflowpro_user");
     return stored ? JSON.parse(stored) : null;
   });
+
   const [isLoading, setIsLoading] = useState(false);
 
-  const login = useCallback(async (email: string, password: string, role?: UserRole) => {
-    setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Mock authentication - in real app, validate against backend
-    const selectedRole = role || 'employee';
-    const mockUser = mockUsers[selectedRole];
-    
-    setUser(mockUser);
-    localStorage.setItem('workflowpro_user', JSON.stringify(mockUser));
-    setIsLoading(false);
-  }, []);
+  // 🔐 REAL LOGIN (Backend API)
+  const login = useCallback(
+    async (email: string, password: string) => {
+      try {
+        setIsLoading(true);
+
+        const res = await loginUser({
+          email,
+          password,
+        });
+
+        /**
+         * Expected backend response:
+         * {
+         *   token: string,
+         *   user: {
+         *     id,
+         *     name,
+         *     email,
+         *     role,
+         *     department
+         *   }
+         * }
+         */
+
+        const { token, user } = res.data;
+
+        // store token
+        localStorage.setItem("token", token);
+
+        // store user
+        setUser(user);
+        localStorage.setItem("workflowpro_user", JSON.stringify(user));
+      } catch (error) {
+        console.error("Login failed:", error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   const logout = useCallback(() => {
     setUser(null);
-    localStorage.removeItem('workflowpro_user');
+    localStorage.removeItem("workflowpro_user");
+    localStorage.removeItem("token");
   }, []);
 
   return (
@@ -101,8 +104,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
