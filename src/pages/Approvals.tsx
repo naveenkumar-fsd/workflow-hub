@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { RequestCard } from '@/components/dashboard/RequestCard';
 import { Button } from '@/components/ui/button';
@@ -11,17 +11,77 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockRequests } from '@/data/mockData';
 import { Search, Filter, CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { Request } from '@/data/mockData';
+import { getPendingApprovals, approveWorkflow, rejectWorkflow } from '@/api/workflow_service';
 
 export default function Approvals() {
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
-  const pendingRequests = mockRequests.filter(r => r.status === 'pending');
+  useEffect(() => {
+    const fetchApprovals = async () => {
+      try {
+        const response = await getPendingApprovals();
+        
+        interface BackendWorkflow {
+          id?: string | number;
+          title?: string;
+          description?: string;
+          type?: string;
+          status?: string;
+          createdAt?: string;
+          createdBy?: {
+            id?: string;
+            name?: string;
+            department?: string;
+          };
+          isOverdue?: boolean;
+          [key: string]: unknown;
+        }
+
+        const mappedRequests: Request[] = (response.data || []).map(
+          (workflow: BackendWorkflow) => ({
+            id: String(workflow.id || ''),
+            type: (workflow.type || 'leave') as Request['type'],
+            title: workflow.title || 'Untitled Request',
+            description: workflow.description || '',
+            status: (workflow.status || 'pending') as Request['status'],
+            createdAt: workflow.createdAt || new Date().toISOString(),
+            updatedAt: workflow.createdAt || new Date().toISOString(),
+            createdBy: {
+              id: workflow.createdBy?.id || 'unknown',
+              name: workflow.createdBy?.name || 'Unknown',
+              department: workflow.createdBy?.department || 'Unknown',
+            },
+            metadata: {},
+            timeline: [],
+            priority: 'medium' as const,
+            isOverdue: workflow.isOverdue || false,
+          })
+        );
+
+        setRequests(mappedRequests.filter(r => r.status === 'pending'));
+      } catch (error) {
+        console.error('Failed to fetch approvals:', error);
+        toast.error('Failed to load approvals', {
+          description: 'Please try again later.',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApprovals();
+  }, []);
+
+  const pendingRequests = requests;
   const overdueCount = pendingRequests.filter(r => r.isOverdue).length;
 
   const filteredRequests = pendingRequests.filter(request => {
@@ -37,17 +97,59 @@ export default function Approvals() {
     return true;
   });
 
-  const handleApprove = (id: string) => {
-    toast.success('Request approved', {
-      description: `Request ${id} has been approved successfully.`,
-    });
+  const handleApprove = async (id: string) => {
+    setProcessingIds(prev => new Set(prev).add(id));
+    try {
+      await approveWorkflow(id);
+      setRequests(prev => prev.filter(r => r.id !== id));
+      toast.success('Request approved', {
+        description: `Request ${id} has been approved successfully.`,
+      });
+    } catch (error) {
+      console.error('Failed to approve request:', error);
+      toast.error('Failed to approve request', {
+        description: 'Please try again.',
+      });
+    } finally {
+      setProcessingIds(prev => {
+        const updated = new Set(prev);
+        updated.delete(id);
+        return updated;
+      });
+    }
   };
 
-  const handleReject = (id: string) => {
-    toast.error('Request rejected', {
-      description: `Request ${id} has been rejected.`,
-    });
+  const handleReject = async (id: string) => {
+    setProcessingIds(prev => new Set(prev).add(id));
+    try {
+      await rejectWorkflow(id);
+      setRequests(prev => prev.filter(r => r.id !== id));
+      toast.error('Request rejected', {
+        description: `Request ${id} has been rejected.`,
+      });
+    } catch (error) {
+      console.error('Failed to reject request:', error);
+      toast.error('Failed to reject request', {
+        description: 'Please try again.',
+      });
+    } finally {
+      setProcessingIds(prev => {
+        const updated = new Set(prev);
+        updated.delete(id);
+        return updated;
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading approvals...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

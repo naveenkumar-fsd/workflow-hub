@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { RequestCard } from '@/components/dashboard/RequestCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockRequests, analyticsData } from '@/data/mockData';
 import { Link } from 'react-router-dom';
 import {
   FileText,
@@ -29,12 +28,23 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { Request, RequestStatus } from '@/data/mockData';
+import { getUserWorkflows } from '@/api/workflow_service';
 
-function EmployeeDashboard() {
-  const myRequests = mockRequests.filter(r => r.createdBy.id === '1');
-  const pendingCount = myRequests.filter(r => r.status === 'pending').length;
-  const approvedCount = myRequests.filter(r => r.status === 'approved').length;
-  const rejectedCount = myRequests.filter(r => r.status === 'rejected').length;
+function EmployeeDashboard({ requests, loading }: { requests: Request[]; loading: boolean }) {
+  const pendingCount = requests.filter(r => r.status === 'pending').length;
+  const approvedCount = requests.filter(r => r.status === 'approved').length;
+  const rejectedCount = requests.filter(r => r.status === 'rejected').length;
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -56,7 +66,7 @@ function EmployeeDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Requests"
-          value={myRequests.length}
+          value={requests.length}
           icon={FileText}
           change={{ value: 12, type: 'increase' }}
         />
@@ -91,18 +101,32 @@ function EmployeeDashboard() {
           </Link>
         </div>
         <div className="space-y-4">
-          {myRequests.slice(0, 3).map((request) => (
-            <RequestCard key={request.id} request={request} />
-          ))}
+          {requests.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">No requests yet</p>
+          ) : (
+            requests.slice(0, 3).map((request) => (
+              <RequestCard key={request.id} request={request} />
+            ))
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function ManagerDashboard() {
-  const pendingApprovals = mockRequests.filter(r => r.status === 'pending');
+function ManagerDashboard({ requests, loading }: { requests: Request[]; loading: boolean }) {
+  const pendingApprovals = requests.filter(r => r.status === 'pending');
   const overdueCount = pendingApprovals.filter(r => r.isOverdue).length;
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -162,23 +186,84 @@ function ManagerDashboard() {
           </div>
         </div>
         <div className="space-y-4">
-          {pendingApprovals.slice(0, 4).map((request) => (
-            <RequestCard
-              key={request.id}
-              request={request}
-              showActions
-              onApprove={(id) => console.log('Approve', id)}
-              onReject={(id) => console.log('Reject', id)}
-            />
-          ))}
+          {pendingApprovals.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">No pending approvals</p>
+          ) : (
+            pendingApprovals.slice(0, 4).map((request) => (
+              <RequestCard
+                key={request.id}
+                request={request}
+                showActions
+                onApprove={(id) => console.log('Approve', id)}
+                onReject={(id) => console.log('Reject', id)}
+              />
+            ))
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function AdminDashboard() {
+interface AnalyticsData {
+  approvalTrend: Array<{ month: string; approved: number; rejected: number }>;
+  requestsByStatus: Array<{ name: string; value: number }>;
+  bottleneckApprovers: Array<{ name: string; pendingCount: number; avgTime: number }>;
+}
+
+function generateAnalyticsData(requests: Request[]): AnalyticsData {
+  // Generate approval trend (last 6 months)
+  const approvalTrend: AnalyticsData['approvalTrend'] = [
+    { month: 'Jan', approved: 12, rejected: 4 },
+    { month: 'Feb', approved: 19, rejected: 3 },
+    { month: 'Mar', approved: 15, rejected: 5 },
+    { month: 'Apr', approved: 22, rejected: 6 },
+    { month: 'May', approved: 18, rejected: 2 },
+    { month: 'Jun', approved: 25, rejected: 4 },
+  ];
+
+  // Calculate requests by status
+  const statusCounts = {
+    pending: requests.filter(r => r.status === 'pending').length,
+    approved: requests.filter(r => r.status === 'approved').length,
+    rejected: requests.filter(r => r.status === 'rejected').length,
+    draft: requests.filter(r => r.status === 'draft').length,
+  };
+
+  const requestsByStatus: AnalyticsData['requestsByStatus'] = [
+    { name: 'Pending', value: statusCounts.pending },
+    { name: 'Approved', value: statusCounts.approved },
+    { name: 'Rejected', value: statusCounts.rejected },
+    { name: 'Draft', value: statusCounts.draft },
+  ];
+
+  // Bottleneck approvers (mock data as we don't have approver info in batch)
+  const bottleneckApprovers: AnalyticsData['bottleneckApprovers'] = [
+    { name: 'Sarah Johnson', pendingCount: 8, avgTime: 24 },
+    { name: 'Mike Chen', pendingCount: 12, avgTime: 36 },
+    { name: 'Emily Davis', pendingCount: 5, avgTime: 18 },
+  ];
+
+  return {
+    approvalTrend,
+    requestsByStatus,
+    bottleneckApprovers,
+  };
+}
+
+function AdminDashboard({ requests, loading }: { requests: Request[]; loading: boolean }) {
   const pieColors = ['hsl(var(--warning))', 'hsl(var(--success))', 'hsl(var(--destructive))', 'hsl(var(--muted))'];
+  const analyticsData = generateAnalyticsData(requests);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -202,7 +287,7 @@ function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Requests"
-          value={70}
+          value={requests.length}
           icon={FileText}
           change={{ value: 18, type: 'increase' }}
         />
@@ -321,14 +406,64 @@ function AdminDashboard() {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const response = await getUserWorkflows();
+        
+        interface BackendWorkflow {
+          id?: string | number;
+          title?: string;
+          description?: string;
+          type?: string;
+          status?: string;
+          createdAt?: string;
+          isOverdue?: boolean;
+          [key: string]: unknown;
+        }
+
+        const mappedRequests: Request[] = (response.data || []).map(
+          (workflow: BackendWorkflow) => ({
+            id: String(workflow.id || ''),
+            type: (workflow.type || 'leave') as Request['type'],
+            title: workflow.title || 'Untitled Request',
+            description: workflow.description || '',
+            status: (workflow.status || 'pending') as RequestStatus,
+            createdAt: workflow.createdAt || new Date().toISOString(),
+            updatedAt: workflow.createdAt || new Date().toISOString(),
+            createdBy: {
+              id: 'unknown',
+              name: user?.name || 'Unknown',
+              department: user?.department || 'Unknown',
+            },
+            metadata: {},
+            timeline: [],
+            priority: 'medium' as const,
+            isOverdue: workflow.isOverdue || false,
+          })
+        );
+
+        setRequests(mappedRequests);
+      } catch (error) {
+        console.error('Failed to fetch workflows:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRequests();
+  }, [user]);
 
   if (!user) return null;
 
   return (
     <DashboardLayout>
-      {user.role === 'employee' && <EmployeeDashboard />}
-      {user.role === 'manager' && <ManagerDashboard />}
-      {(user.role === 'hr' || user.role === 'admin') && <AdminDashboard />}
+      {user.role === 'employee' && <EmployeeDashboard requests={requests} loading={loading} />}
+      {user.role === 'manager' && <ManagerDashboard requests={requests} loading={loading} />}
+      {(user.role === 'hr' || user.role === 'admin') && <AdminDashboard requests={requests} loading={loading} />}
     </DashboardLayout>
   );
 }
