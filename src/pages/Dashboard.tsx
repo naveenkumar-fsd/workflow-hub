@@ -179,10 +179,11 @@ function ManagerDashboard({ requests, loading }: { requests: Request[]; loading:
           <div className="flex items-center gap-3">
             <h2 className="font-semibold text-lg">Pending Approvals</h2>
             {overdueCount > 0 && (
-              <Badge variant="escalated">
-                {overdueCount} overdue
-              </Badge>bro 
-            )}
+  <Badge variant="escalated">
+    {overdueCount} overdue
+  </Badge>
+)}
+
           </div>
         </div>
         <div className="space-y-4">
