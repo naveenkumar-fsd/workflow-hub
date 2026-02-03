@@ -43,18 +43,7 @@ export default function Login() {
 
 
   return (
-     <>
-    <button
-      onClick={() => alert("STEP 3: BASIC BUTTON CLICKED")}
-      style={{
-        padding: "20px",
-        background: "red",
-        color: "white",
-        marginBottom: "20px",
-      }}
-    >
-      BASIC TEST BUTTON
-    </button>
+   
     <div className="min-h-screen flex">
       {/* Left Side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 hero-gradient relative overflow-hidden">
@@ -202,6 +191,6 @@ export default function Login() {
         </Card>
       </div>
     </div>
-    </>
+    
   );
 }
