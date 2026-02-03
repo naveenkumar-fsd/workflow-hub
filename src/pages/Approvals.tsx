@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { RequestCard } from '@/components/dashboard/RequestCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -11,16 +10,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Filter, CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Search, Filter, CheckCircle2, XCircle, Clock, AlertTriangle, Loader2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
-import { Request } from '@/data/mockData';
 import { getPendingApprovals, approveWorkflow, rejectWorkflow } from '@/api/workflow_service';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function Approvals() {
-  const [requests, setRequests] = useState<Request[]>([]);
+  // Type for backend workflow response
+  interface WorkflowItem {
+    id?: string | number;
+    title?: string;
+    description?: string;
+    type?: string;
+    status?: string;
+    createdAt?: string;
+    createdBy?: {
+      id?: string;
+      name?: string;
+      department?: string;
+    };
+    isOverdue?: boolean;
+    [key: string]: unknown;
+  }
+
+  interface ApprovalRequest {
+    id: string;
+    title: string;
+    description: string;
+    type: string;
+    createdAt: string;
+    createdBy: {
+      name: string;
+      department?: string;
+    };
+    isOverdue: boolean;
+  }
+
+  const [requests, setRequests] = useState<ApprovalRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
@@ -29,45 +56,23 @@ export default function Approvals() {
     const fetchApprovals = async () => {
       try {
         const response = await getPendingApprovals();
-        
-        interface BackendWorkflow {
-          id?: string | number;
-          title?: string;
-          description?: string;
-          type?: string;
-          status?: string;
-          createdAt?: string;
-          createdBy?: {
-            id?: string;
-            name?: string;
-            department?: string;
-          };
-          isOverdue?: boolean;
-          [key: string]: unknown;
-        }
 
-        const mappedRequests: Request[] = (response.data || []).map(
-          (workflow: BackendWorkflow) => ({
+        const mappedRequests: ApprovalRequest[] = (response.data || []).map(
+          (workflow: WorkflowItem) => ({
             id: String(workflow.id || ''),
-            type: (workflow.type || 'leave') as Request['type'],
+            type: workflow.type || 'leave',
             title: workflow.title || 'Untitled Request',
             description: workflow.description || '',
-            status: (workflow.status || 'pending') as Request['status'],
             createdAt: workflow.createdAt || new Date().toISOString(),
-            updatedAt: workflow.createdAt || new Date().toISOString(),
             createdBy: {
-              id: workflow.createdBy?.id || 'unknown',
               name: workflow.createdBy?.name || 'Unknown',
               department: workflow.createdBy?.department || 'Unknown',
             },
-            metadata: {},
-            timeline: [],
-            priority: 'medium' as const,
             isOverdue: workflow.isOverdue || false,
           })
         );
 
-        setRequests(mappedRequests.filter(r => r.status === 'pending'));
+        setRequests(mappedRequests);
       } catch (error) {
         console.error('Failed to fetch approvals:', error);
         toast.error('Failed to load approvals', {
@@ -81,10 +86,9 @@ export default function Approvals() {
     fetchApprovals();
   }, []);
 
-  const pendingRequests = requests;
-  const overdueCount = pendingRequests.filter(r => r.isOverdue).length;
+  const overdueCount = requests.filter(r => r.isOverdue).length;
 
-  const filteredRequests = pendingRequests.filter(request => {
+  const filteredRequests = requests.filter(request => {
     if (typeFilter !== 'all' && request.type !== typeFilter) return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -124,7 +128,7 @@ export default function Approvals() {
     try {
       await rejectWorkflow(id);
       setRequests(prev => prev.filter(r => r.id !== id));
-      toast.error('Request rejected', {
+      toast.success('Request rejected', {
         description: `Request ${id} has been rejected.`,
       });
     } catch (error) {
@@ -141,11 +145,70 @@ export default function Approvals() {
     }
   };
 
+  // Approval card component
+  const ApprovalCard = ({ request }: { request: ApprovalRequest }) => {
+    const isProcessing = processingIds.has(request.id);
+    
+    return (
+      <div className="bg-card rounded-lg border border-border p-4 hover:border-primary/50 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <h3 className="font-semibold text-base">{request.title}</h3>
+              <Badge variant="outline" className="capitalize">
+                {request.type}
+              </Badge>
+              {request.isOverdue && (
+                <Badge variant="destructive" className="flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Overdue
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{request.description}</p>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span>From: <strong>{request.createdBy.name}</strong></span>
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}
+              </span>
+              <span>ID: {request.id}</span>
+            </div>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleReject(request.id)}
+              disabled={isProcessing}
+              className="gap-1"
+            >
+              {isProcessing ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
+              Reject
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleApprove(request.id)}
+              disabled={isProcessing}
+              className="gap-1 bg-green-600 hover:bg-green-700"
+            >
+              {isProcessing ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+              Approve
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Loading approvals...</p>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Loader2 className="h-10 w-10 text-muted-foreground animate-spin mb-3" />
+          <p className="text-muted-foreground">Loading pending approvals...</p>
         </div>
       </DashboardLayout>
     );
@@ -157,29 +220,29 @@ export default function Approvals() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold">Pending Approvals</h1>
               {overdueCount > 0 && (
-                <Badge variant="escalated" className="flex items-center gap-1">
+                <Badge variant="destructive" className="flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
                   {overdueCount} overdue
                 </Badge>
               )}
             </div>
             <p className="text-muted-foreground">
-              {pendingRequests.length} requests awaiting your action
+              {requests.length} requests awaiting your action
             </p>
           </div>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div className="bg-card rounded-lg border border-border p-4">
             <div className="flex items-center gap-2 text-warning">
               <Clock className="h-4 w-4" />
               <span className="text-sm font-medium">Pending</span>
             </div>
-            <p className="text-2xl font-bold mt-1">{pendingRequests.length}</p>
+            <p className="text-2xl font-bold mt-1">{requests.length}</p>
           </div>
           <div className="bg-card rounded-lg border border-border p-4">
             <div className="flex items-center gap-2 text-destructive">
@@ -191,16 +254,9 @@ export default function Approvals() {
           <div className="bg-card rounded-lg border border-border p-4">
             <div className="flex items-center gap-2 text-success">
               <CheckCircle2 className="h-4 w-4" />
-              <span className="text-sm font-medium">Approved Today</span>
+              <span className="text-sm font-medium">Request Types</span>
             </div>
-            <p className="text-2xl font-bold mt-1">5</p>
-          </div>
-          <div className="bg-card rounded-lg border border-border p-4">
-            <div className="flex items-center gap-2 text-destructive">
-              <XCircle className="h-4 w-4" />
-              <span className="text-sm font-medium">Rejected Today</span>
-            </div>
-            <p className="text-2xl font-bold mt-1">1</p>
+            <p className="text-2xl font-bold mt-1">{new Set(requests.map(r => r.type)).size}</p>
           </div>
         </div>
 
@@ -231,22 +287,20 @@ export default function Approvals() {
         </div>
 
         {/* Request List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredRequests.length === 0 ? (
-            <div className="text-center py-12 bg-card rounded-xl border border-border">
+            <div className="text-center py-16 bg-card rounded-lg border border-border">
               <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="font-semibold text-lg mb-2">All caught up!</h3>
-              <p className="text-muted-foreground">No pending approvals at the moment.</p>
+              <p className="text-muted-foreground">
+                {requests.length === 0
+                  ? 'No pending approvals at the moment.'
+                  : 'No requests match your current filters.'}
+              </p>
             </div>
           ) : (
             filteredRequests.map((request) => (
-              <RequestCard
-                key={request.id}
-                request={request}
-                showActions
-                onApprove={handleApprove}
-                onReject={handleReject}
-              />
+              <ApprovalCard key={request.id} request={request} />
             ))
           )}
         </div>

@@ -15,3 +15,14 @@ export const approveWorkflow = (id: string) => {
 export const rejectWorkflow = (id: string) => {
   return api.put(`/admin/workflows/${id}/reject`);
 };
+
+export interface CreateWorkflowPayload {
+  type: string;
+  title: string;
+  description: string;
+  priority?: 'low' | 'medium' | 'high';
+}
+
+export const createWorkflow = (payload: CreateWorkflowPayload) => {
+  return api.post("/workflows", payload);
+};

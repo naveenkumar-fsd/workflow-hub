@@ -58,19 +58,19 @@ export function AppSidebar({ isCollapsed, onToggle }: AppSidebarProps) {
   if (!user) return null;
 
   // Role-based visibility rules:
-  // - Employee: only show "My Requests"
-  // - Manager: show "My Requests" and "Approvals"
-  // - Admin: show "My Requests", "Approvals", "Users & Roles", and "Audit Logs"
-  // - HR and others: fall back to default role-based navItems configuration
+  // - Employee: Dashboard, My Requests, Create Request
+  // - Manager: Dashboard, Approvals
+  // - Admin: Dashboard, Users & Roles, Workflow Builder
   let filteredNavItems: NavItem[] = [];
 
   if (user.role === 'employee') {
-    filteredNavItems = navItems.filter((i) => i.label === 'My Requests');
+    filteredNavItems = navItems.filter((i) => ['Dashboard', 'My Requests', 'Create Request', 'Settings'].includes(i.label));
   } else if (user.role === 'manager') {
-    filteredNavItems = navItems.filter((i) => ['My Requests', 'Approvals'].includes(i.label));
+    filteredNavItems = navItems.filter((i) => ['Dashboard', 'Approvals', 'Settings'].includes(i.label));
   } else if (user.role === 'admin') {
-    filteredNavItems = navItems.filter((i) => ['My Requests', 'Approvals', 'Users & Roles', 'Audit Logs'].includes(i.label));
+    filteredNavItems = navItems.filter((i) => ['Dashboard', 'Users & Roles', 'Workflow Builder', 'Settings'].includes(i.label));
   } else {
+    // HR and other roles: use default role-based filtering
     filteredNavItems = navItems.filter(item => item.roles.includes(user.role));
   }
 

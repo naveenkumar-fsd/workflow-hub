@@ -6,21 +6,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, DollarSign, Laptop, Key, ArrowLeft, Upload, CalendarDays } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { requestTemplates, RequestType } from '@/data/mockData';
+import { Calendar, DollarSign, Laptop, Key, ArrowLeft, Upload, CalendarDays, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { createWorkflow } from '@/api/workflow_service';
 
-const requestTypes = [
-  { type: 'leave' as RequestType, label: 'Leave Request', icon: Calendar, description: 'Vacation, sick leave, personal time' },
-  { type: 'expense' as RequestType, label: 'Expense Request', icon: DollarSign, description: 'Reimbursements, travel costs' },
-  { type: 'asset' as RequestType, label: 'Asset Request', icon: Laptop, description: 'Equipment, hardware, software' },
-  { type: 'access' as RequestType, label: 'Access Request', icon: Key, description: 'System access, permissions' },
+type RequestType = 'leave' | 'expense' | 'asset' | 'access';
+type PriorityLevel = 'low' | 'medium' | 'high';
+
+const requestTypes: Array<{ type: RequestType; label: string; icon: typeof Calendar; description: string }> = [
+  { type: 'leave', label: 'Leave Request', icon: Calendar, description: 'Vacation, sick leave, personal time' },
+  { type: 'expense', label: 'Expense Request', icon: DollarSign, description: 'Reimbursements, travel costs' },
+  { type: 'asset', label: 'Asset Request', icon: Laptop, description: 'Equipment, hardware, software' },
+  { type: 'access', label: 'Access Request', icon: Key, description: 'System access, permissions' },
 ];
 
 export default function CreateRequest() {
   const navigate = useNavigate();
   const [selectedType, setSelectedType] = useState<RequestType | null>(null);
+  const [priority, setPriority] = useState<PriorityLevel>('medium');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -31,12 +36,63 @@ export default function CreateRequest() {
     accessLevel: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast.success('Request submitted successfully!', {
-      description: 'Your request has been sent for approval.',
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const resetForm = () => {
+    setSelectedType(null);
+    setPriority('medium');
+    setFormData({
+      title: '',
+      description: '',
+      startDate: '',
+      endDate: '',
+      amount: '',
+      assetType: '',
+      accessLevel: '',
     });
-    navigate('/my-requests');
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedType || !formData.title.trim() || !formData.description.trim()) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await createWorkflow({
+        type: selectedType,
+        title: formData.title,
+        description: formData.description,
+        priority,
+      });
+
+      toast.success('Request submitted successfully!', {
+        description: 'Your request has been sent for approval.',
+      });
+      
+      resetForm();
+      navigate('/my-requests');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit request. Please try again.';
+      setError(errorMessage);
+      toast.error('Error', {
+        description: errorMessage,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -81,6 +137,16 @@ export default function CreateRequest() {
         ) : (
           /* Request Form */
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Alert */}
+            {error && (
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
+                <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-destructive">Error</p>
+                  <p className="text-sm text-destructive/90">{error}</p>
+                </div>
+              </div>
+            )}
             {/* Type indicator */}
             <div className="flex items-center gap-3 p-4 bg-accent rounded-lg">
               {(() => {
@@ -122,6 +188,20 @@ export default function CreateRequest() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="priority">Priority Level</Label>
+                <select
+                  id="priority"
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value as PriorityLevel)}
+                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
               </div>
             </div>
 
@@ -219,11 +299,11 @@ export default function CreateRequest() {
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+              <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={loading}>
                 Cancel
               </Button>
-              <Button type="submit" variant="hero">
-                Submit Request
+              <Button type="submit" variant="hero" disabled={loading}>
+                {loading ? 'Submitting...' : 'Submit Request'}
               </Button>
             </div>
           </form>
