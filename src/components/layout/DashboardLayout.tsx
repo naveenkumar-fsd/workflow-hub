@@ -9,8 +9,10 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -30,7 +32,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" data-role={user?.role ?? 'guest'}>
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <AppSidebar

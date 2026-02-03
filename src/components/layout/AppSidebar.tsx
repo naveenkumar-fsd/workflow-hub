@@ -57,7 +57,22 @@ export function AppSidebar({ isCollapsed, onToggle }: AppSidebarProps) {
 
   if (!user) return null;
 
-  const filteredNavItems = navItems.filter(item => item.roles.includes(user.role));
+  // Role-based visibility rules:
+  // - Employee: only show "My Requests"
+  // - Manager: show "My Requests" and "Approvals"
+  // - Admin: show "My Requests", "Approvals", "Users & Roles", and "Audit Logs"
+  // - HR and others: fall back to default role-based navItems configuration
+  let filteredNavItems: NavItem[] = [];
+
+  if (user.role === 'employee') {
+    filteredNavItems = navItems.filter((i) => i.label === 'My Requests');
+  } else if (user.role === 'manager') {
+    filteredNavItems = navItems.filter((i) => ['My Requests', 'Approvals'].includes(i.label));
+  } else if (user.role === 'admin') {
+    filteredNavItems = navItems.filter((i) => ['My Requests', 'Approvals', 'Users & Roles', 'Audit Logs'].includes(i.label));
+  } else {
+    filteredNavItems = navItems.filter(item => item.roles.includes(user.role));
+  }
 
   return (
     <aside

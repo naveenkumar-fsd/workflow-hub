@@ -181,7 +181,7 @@ function ManagerDashboard({ requests, loading }: { requests: Request[]; loading:
             {overdueCount > 0 && (
               <Badge variant="escalated">
                 {overdueCount} overdue
-              </Badge>
+              </Badge>bro 
             )}
           </div>
         </div>
