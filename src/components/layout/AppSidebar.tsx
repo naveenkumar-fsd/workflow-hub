@@ -11,13 +11,10 @@ import {
   Settings,
   Users,
   Workflow,
-  ClipboardList,
   Shield,
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Clock,
-  FileCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -34,15 +31,12 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['employee', 'manager', 'hr', 'admin'] },
   { label: 'My Requests', href: '/my-requests', icon: FileText, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Create Request', href: '/create-request', icon: PlusCircle, roles: ['employee', 'manager', 'hr'] },
-  { label: 'Approvals', href: '/approvals', icon: CheckSquare, roles: ['manager', 'hr', 'admin'] },
-  { label: 'All Requests', href: '/all-requests', icon: ClipboardList, roles: ['hr', 'admin'] },
-  { label: 'Analytics', href: '/analytics', icon: BarChart3, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Create Request', href: '/create-request', icon: PlusCircle, roles: ['employee'] },
+  { label: 'Approvals', href: '/approvals', icon: CheckSquare, roles: ['manager', 'admin'] },
+  { label: 'Analytics', href: '/analytics', icon: BarChart3, roles: ['manager', 'admin'] },
   { label: 'Workflow Builder', href: '/workflows', icon: Workflow, roles: ['admin'] },
   { label: 'Users & Roles', href: '/users', icon: Users, roles: ['admin'] },
   { label: 'Audit Logs', href: '/audit-logs', icon: Shield, roles: ['admin'] },
-  { label: 'Templates', href: '/templates', icon: FileCheck, roles: ['admin'] },
-  { label: 'SLA Settings', href: '/sla-settings', icon: Clock, roles: ['admin'] },
   { label: 'Settings', href: '/settings', icon: Settings, roles: ['employee', 'manager', 'hr', 'admin'] },
 ];
 
@@ -57,22 +51,8 @@ export function AppSidebar({ isCollapsed, onToggle }: AppSidebarProps) {
 
   if (!user) return null;
 
-  // Role-based visibility rules:
-  // - Employee: Dashboard, My Requests, Create Request
-  // - Manager: Dashboard, Approvals
-  // - Admin: Dashboard, Users & Roles, Workflow Builder
-  let filteredNavItems: NavItem[] = [];
-
-  if (user.role === 'employee') {
-    filteredNavItems = navItems.filter((i) => ['Dashboard', 'My Requests', 'Create Request', 'Settings'].includes(i.label));
-  } else if (user.role === 'manager') {
-    filteredNavItems = navItems.filter((i) => ['Dashboard', 'Approvals', 'Settings'].includes(i.label));
-  } else if (user.role === 'admin') {
-    filteredNavItems = navItems.filter((i) => ['Dashboard', 'Users & Roles', 'Workflow Builder', 'Settings'].includes(i.label));
-  } else {
-    // HR and other roles: use default role-based filtering
-    filteredNavItems = navItems.filter(item => item.roles.includes(user.role));
-  }
+  // Filter menu items based on user role
+  const filteredNavItems = navItems.filter(item => item.roles.includes(user.role));
 
   return (
     <aside

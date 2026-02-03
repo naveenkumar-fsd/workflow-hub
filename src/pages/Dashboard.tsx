@@ -15,6 +15,7 @@ import {
   ArrowRight,
   TrendingUp,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -77,7 +78,8 @@ function EmployeeDashboard({ requests, loading }: { requests: Request[]; loading
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="text-center py-12">
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Loader2 className="h-10 w-10 text-muted-foreground animate-spin mb-3" />
           <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>

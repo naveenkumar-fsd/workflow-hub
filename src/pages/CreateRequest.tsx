@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, DollarSign, Laptop, Key, ArrowLeft, Upload, CalendarDays, AlertCircle } from 'lucide-react';
+import { Calendar, DollarSign, Laptop, Key, ArrowLeft, Upload, CalendarDays, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createWorkflow } from '@/api/workflow_service';
 
@@ -302,7 +302,8 @@ export default function CreateRequest() {
               <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={loading}>
                 Cancel
               </Button>
-              <Button type="submit" variant="hero" disabled={loading}>
+              <Button type="submit" variant="hero" disabled={loading} className="gap-2">
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {loading ? 'Submitting...' : 'Submit Request'}
               </Button>
             </div>

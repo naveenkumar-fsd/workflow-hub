@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/routes/ProtectedRoute";
 
 // Pages
 import Landing from "./pages/Landing";
@@ -17,6 +18,7 @@ import Workflows from "./pages/Workflows";
 import AuditLogs from "./pages/AuditLogs";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
+import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,18 +33,113 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/create-request" element={<CreateRequest />} />
-            <Route path="/my-requests" element={<MyRequests />} />
-            <Route path="/approvals" element={<Approvals />} />
-            <Route path="/all-requests" element={<Approvals />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/workflows" element={<Workflows />} />
-            <Route path="/audit-logs" element={<AuditLogs />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/templates" element={<Workflows />} />
-            <Route path="/sla-settings" element={<Settings />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            
+            {/* Protected Routes - Any authenticated user */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Protected Routes - Employee, Manager, HR, Admin */}
+            <Route
+              path="/create-request"
+              element={
+                <ProtectedRoute allowedRoles={['employee', 'manager', 'hr', 'admin']}>
+                  <CreateRequest />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-requests"
+              element={
+                <ProtectedRoute allowedRoles={['employee', 'manager', 'hr', 'admin']}>
+                  <MyRequests />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Protected Routes - Manager, Admin */}
+            <Route
+              path="/approvals"
+              element={
+                <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                  <Approvals />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/all-requests"
+              element={
+                <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                  <Approvals />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                  <Analytics />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Protected Routes - Admin Only */}
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Users />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/workflows"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Workflows />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/templates"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Workflows />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/audit-logs"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AuditLogs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sla-settings"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

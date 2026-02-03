@@ -6,6 +6,7 @@ import React, {
   ReactNode,
 } from "react";
 import { loginUser } from "@/api/authService";
+import { toast } from "sonner";
 
 export type UserRole = "employee" | "manager" | "hr" | "admin";
 
@@ -58,10 +59,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   role: res.data.role,
 });
 
+    toast.success("Login successful!", {
+      description: `Welcome back, ${res.data.name}!`,
+    });
 
     setIsLoading(false);
   } catch (error) {
     setIsLoading(false);
+    const errorMessage = error instanceof Error ? error.message : "Login failed. Please try again.";
+    toast.error("Login failed", {
+      description: errorMessage,
+    });
     throw error;
   }
 };
