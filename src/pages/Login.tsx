@@ -23,13 +23,17 @@ export default function Login() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('employee');
   const [showPassword, setShowPassword] = useState(false);
 
-  //modify
-  const handleSubmit = async () => {
-  console.log("STEP 1: SIGN IN CLICKED");
-
-  await login(email, password, selectedRole);
-  navigate("/dashboard");
-};
+  const handleSignIn = async () => {
+    try {
+      // Call login with only required parameters
+      await login(email, password);
+      // Navigate after successful login
+      navigate("/dashboard");
+    } catch (error) {
+      // Error is handled by AuthContext and can be shown to user if needed
+      console.error("Sign in failed:", error);
+    }
+  };
 
 
 
@@ -154,12 +158,11 @@ export default function Login() {
               </div>
 
               <Button
-  type="button"
-  className="w-full"
-  size="lg"
-  disabled={isLoading}
-  onClick={handleSubmit}
->
+                type="button"
+                className="w-full"
+                size="lg"
+                onClick={handleSignIn}
+              >
 
                 {isLoading ? (
                   <div className="flex items-center gap-2">
