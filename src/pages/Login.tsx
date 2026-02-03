@@ -24,14 +24,13 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   //modify
-  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  console.log("STEP 1: SIGN IN CLICKED"); // 👈 ADD THIS LINE
+  const handleSubmit = async () => {
+  console.log("STEP 1: SIGN IN CLICKED");
 
   await login(email, password, selectedRole);
-  navigate('/dashboard');
+  navigate("/dashboard");
 };
+
 
 
   return (
@@ -94,7 +93,8 @@ export default function Login() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form className="space-y-4">
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -153,7 +153,14 @@ export default function Login() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+              <Button
+  type="button"
+  className="w-full"
+  size="lg"
+  disabled={isLoading}
+  onClick={handleSubmit}
+>
+
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
