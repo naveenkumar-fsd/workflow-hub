@@ -40,48 +40,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   // 🔐 REAL LOGIN (Backend API)
   //example modify
-  const login = useCallback(
-  async (email: string, password: string) => {
+  const login = async (email: string, password: string) => {
+  setIsLoading(true);
 
-    console.log("STEP 2: LOGIN FUNCTION CALLED", email, password); // 👈 ADD THIS
+  try {
+    const res = await loginUser({ email, password });
 
-    try {
-      setIsLoading(true);
-      const res = await loginUser({ email, password });
-      
+    const token = res.data.token;
+
+    // 🔥 STORE JWT
+    localStorage.setItem("token", token);
+
+    setUser({
+  id: res.data.id,
+  name: res.data.name,
+  email: res.data.email,
+  role: res.data.role,
+});
 
 
-        /**
-         * Expected backend response:
-         * {
-         *   token: string,
-         *   user: {
-         *     id,
-         *     name,
-         *     email,
-         *     role,
-         *     department
-         *   }
-         * }
-         */
+    setIsLoading(false);
+  } catch (error) {
+    setIsLoading(false);
+    throw error;
+  }
+};
 
-        const { token, user } = res.data;
-
-        // store token
-        localStorage.setItem("token", token);
-
-        // store user
-        setUser(user);
-        localStorage.setItem("workflowpro_user", JSON.stringify(user));
-      } catch (error) {
-        console.error("Login failed:", error);
-        throw error;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
 
   const logout = useCallback(() => {
     setUser(null);

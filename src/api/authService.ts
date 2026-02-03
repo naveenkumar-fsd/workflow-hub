@@ -1,11 +1,5 @@
 import api from "./axios";
 
-export interface LoginPayload {
-  email: string;
-  password: string;
-}
-
-export const loginUser = (data: LoginPayload) => {
-  console.log("Logging in user with data:", data);
+export const loginUser = (data: { email: string; password: string }) => {
   return api.post("/auth/login", data);
 };

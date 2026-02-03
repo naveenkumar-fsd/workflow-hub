@@ -8,6 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Workflow, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+console.log("LOGIN.TSX FILE LOADED");
+
+
 const roles: { value: UserRole; label: string; description: string }[] = [
   { value: 'employee', label: 'Employee', description: 'Submit and track your requests' },
   { value: 'manager', label: 'Manager', description: 'Approve team requests' },
@@ -16,6 +19,8 @@ const roles: { value: UserRole; label: string; description: string }[] = [
 ];
 
 export default function Login() {
+  console.log("LOGIN COMPONENT RENDERED");
+
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('demo@workflowpro.com');
@@ -38,6 +43,18 @@ export default function Login() {
 
 
   return (
+     <>
+    <button
+      onClick={() => alert("STEP 3: BASIC BUTTON CLICKED")}
+      style={{
+        padding: "20px",
+        background: "red",
+        color: "white",
+        marginBottom: "20px",
+      }}
+    >
+      BASIC TEST BUTTON
+    </button>
     <div className="min-h-screen flex">
       {/* Left Side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 hero-gradient relative overflow-hidden">
@@ -185,5 +202,6 @@ export default function Login() {
         </Card>
       </div>
     </div>
+    </>
   );
 }
