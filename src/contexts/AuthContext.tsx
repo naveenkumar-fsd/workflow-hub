@@ -39,15 +39,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   // 🔐 REAL LOGIN (Backend API)
+  //example modify
   const login = useCallback(
-    async (email: string, password: string) => {
-      try {
-        setIsLoading(true);
+  async (email: string, password: string) => {
 
-        const res = await loginUser({
-          email,
-          password,
-        });
+    console.log("STEP 2: LOGIN FUNCTION CALLED", email, password); // 👈 ADD THIS
+
+    try {
+      setIsLoading(true);
+      const res = await loginUser({ email, password });
+      
+
 
         /**
          * Expected backend response:

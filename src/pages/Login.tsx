@@ -23,11 +23,16 @@ export default function Login() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('employee');
   const [showPassword, setShowPassword] = useState(false);
 
+  //modify
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await login(email, password, selectedRole);
-    navigate('/dashboard');
-  };
+  e.preventDefault();
+
+  console.log("STEP 1: SIGN IN CLICKED"); // 👈 ADD THIS LINE
+
+  await login(email, password, selectedRole);
+  navigate('/dashboard');
+};
+
 
   return (
     <div className="min-h-screen flex">
