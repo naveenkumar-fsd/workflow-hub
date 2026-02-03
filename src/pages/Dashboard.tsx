@@ -28,8 +28,46 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { Request, RequestStatus } from '@/data/mockData';
 import { getUserWorkflows } from '@/api/workflow_service';
+
+// Local types (avoid importing mock data)
+export type RequestStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'escalated';
+
+export type RequestType = 'leave' | 'expense' | 'asset' | 'access';
+
+export interface Request {
+  id: string;
+  type: RequestType;
+  title: string;
+  description: string;
+  status: RequestStatus;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: {
+    id: string;
+    name: string;
+    department?: string;
+  };
+  approver?: {
+    id: string;
+    name: string;
+  };
+  metadata: {
+    startDate?: string;
+    endDate?: string;
+    amount?: number;
+    [key: string]: unknown;
+  };
+  timeline: {
+    date: string;
+    action: string;
+    user: string;
+    comment?: string;
+  }[];
+  priority: 'low' | 'medium' | 'high';
+  dueDate?: string;
+  isOverdue?: boolean;
+}
 
 function EmployeeDashboard({ requests, loading }: { requests: Request[]; loading: boolean }) {
   const pendingCount = requests.filter(r => r.status === 'pending').length;
@@ -179,11 +217,10 @@ function ManagerDashboard({ requests, loading }: { requests: Request[]; loading:
           <div className="flex items-center gap-3">
             <h2 className="font-semibold text-lg">Pending Approvals</h2>
             {overdueCount > 0 && (
-  <Badge variant="escalated">
-    {overdueCount} overdue
-  </Badge>
-)}
-
+              <Badge variant="escalated">
+                {overdueCount} overdue
+              </Badge>
+            )}
           </div>
         </div>
         <div className="space-y-4">
@@ -407,47 +444,34 @@ function AdminDashboard({ requests, loading }: { requests: Request[]; loading: b
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [requests, setRequests] = useState<Request[]>([]);
+  const [workflows, setWorkflows] = useState<WorkflowRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchRequests = async () => {
       try {
         const response = await getUserWorkflows();
-        
-        interface BackendWorkflow {
-          id?: string | number;
-          title?: string;
-          description?: string;
-          type?: string;
-          status?: string;
-          createdAt?: string;
-          isOverdue?: boolean;
-          [key: string]: unknown;
-        }
+        const data = Array.isArray(response.data) ? response.data : [];
 
-        const mappedRequests: Request[] = (response.data || []).map(
-          (workflow: BackendWorkflow) => ({
-            id: String(workflow.id || ''),
-            type: (workflow.type || 'leave') as Request['type'],
-            title: workflow.title || 'Untitled Request',
-            description: workflow.description || '',
-            status: (workflow.status || 'pending') as RequestStatus,
-            createdAt: workflow.createdAt || new Date().toISOString(),
-            updatedAt: workflow.createdAt || new Date().toISOString(),
-            createdBy: {
-              id: 'unknown',
-              name: user?.name || 'Unknown',
-              department: user?.department || 'Unknown',
-            },
-            metadata: {},
-            timeline: [],
-            priority: 'medium' as const,
-            isOverdue: workflow.isOverdue || false,
-          })
-        );
+        // Normalize raw API data to typed WorkflowRequest objects
+        const normalizedWorkflows: WorkflowRequest[] = data.map((item: unknown) => {
+          const obj = item && typeof item === 'object' ? (item as Record<string, unknown>) : {};
+          
+          const id = String(obj.id ?? '');
+          const title = typeof obj.title === 'string' ? obj.title : 'Untitled Request';
+          const createdAt = typeof obj.createdAt === 'string' ? obj.createdAt : new Date().toISOString();
+          
+          // Normalize status to valid RequestStatus union
+          let status: RequestStatus = 'pending';
+          const rawStatus = obj.status;
+          if (typeof rawStatus === 'string' && ['draft', 'pending', 'approved', 'rejected', 'escalated'].includes(rawStatus)) {
+            status = rawStatus as RequestStatus;
+          }
 
-        setRequests(mappedRequests);
+          return { id, title, status, createdAt };
+        });
+
+        setWorkflows(normalizedWorkflows);
       } catch (error) {
         console.error('Failed to fetch workflows:', error);
       } finally {
@@ -460,11 +484,41 @@ export default function Dashboard() {
 
   if (!user) return null;
 
+  // Convert WorkflowRequest items (minimal shape) into full Request objects for UI
+  const mappedRequests: Request[] = workflows.map((wf) => {
+    return {
+      id: wf.id,
+      type: 'leave',
+      title: wf.title,
+      description: '',
+      status: wf.status,
+      createdAt: wf.createdAt,
+      updatedAt: wf.createdAt,
+      createdBy: {
+        id: 'unknown',
+        name: user?.name ?? 'Unknown',
+        department: user?.department ?? 'Unknown',
+      },
+      metadata: {},
+      timeline: [],
+      priority: 'medium',
+      isOverdue: false,
+    };
+  });
+
   return (
     <DashboardLayout>
-      {user.role === 'employee' && <EmployeeDashboard requests={requests} loading={loading} />}
-      {user.role === 'manager' && <ManagerDashboard requests={requests} loading={loading} />}
-      {(user.role === 'hr' || user.role === 'admin') && <AdminDashboard requests={requests} loading={loading} />}
+      {user.role === 'employee' && <EmployeeDashboard requests={mappedRequests} loading={loading} />}
+      {user.role === 'manager' && <ManagerDashboard requests={mappedRequests} loading={loading} />}
+      {(user.role === 'hr' || user.role === 'admin') && <AdminDashboard requests={mappedRequests} loading={loading} />}
     </DashboardLayout>
   );
+}
+
+// Backend / API response shape - normalized to minimal typed shape on fetch
+export interface WorkflowRequest {
+  id: string;
+  title: string;
+  status: RequestStatus;
+  createdAt: string;
 }

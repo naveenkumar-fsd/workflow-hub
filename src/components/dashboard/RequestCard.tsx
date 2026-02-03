@@ -1,6 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Request } from '@/data/mockData';
+// Minimal request shape expected from backend
+export interface MinimalRequest {
+  id: string;
+  title?: string;
+  status?: string;
+  createdAt?: string;
+}
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,14 +36,14 @@ const typeColors = {
 };
 
 interface RequestCardProps {
-  request: Request;
+  request: MinimalRequest;
   showActions?: boolean;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
 }
 
 export function RequestCard({ request, showActions, onApprove, onReject }: RequestCardProps) {
-  const Icon = typeIcons[request.type];
+  const Icon = FileText;
 
   return (
     <div className="bg-card rounded-xl border border-border p-4 card-hover">
@@ -52,40 +58,25 @@ export function RequestCard({ request, showActions, onApprove, onReject }: Reque
           <div className="flex items-start justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-sm">{request.title}</h3>
-                {request.isOverdue && (
-                  <AlertTriangle className="h-4 w-4 text-destructive" />
-                )}
+                <h3 className="font-semibold text-sm">{request.title ?? 'Untitled'}</h3>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {request.id} • {request.createdBy.name}
+                {request.id} • {request.createdAt ? new Date(request.createdAt).toLocaleString() : ''}
               </p>
             </div>
-            <Badge variant={request.status as any} className="capitalize">
-              {request.status}
-            </Badge>
+            <Badge className="capitalize">{request.status ?? 'unknown'}</Badge>
           </div>
 
           <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
-            {request.description}
+            {/** minimal card - description removed */}
           </p>
 
           {/* Metadata */}
           <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}
+              {request.createdAt ? formatDistanceToNow(new Date(request.createdAt), { addSuffix: true }) : ''}
             </span>
-            {request.metadata.startDate && request.metadata.endDate && (
-              <span>
-                {new Date(request.metadata.startDate).toLocaleDateString()} - {new Date(request.metadata.endDate).toLocaleDateString()}
-              </span>
-            )}
-            {request.metadata.amount && (
-              <span className="font-medium">
-                ${request.metadata.amount.toLocaleString()}
-              </span>
-            )}
           </div>
 
           {/* Actions */}
