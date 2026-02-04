@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   Loader2,
 } from 'lucide-react';
+import DashboardEmpty from './DashboardEmpty';
 import {
   BarChart,
   Bar,
@@ -142,7 +143,17 @@ function EmployeeDashboard({ requests, loading }: { requests: Request[]; loading
         </div>
         <div className="space-y-4">
           {requests.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">No requests yet</p>
+            <div className="text-center py-16 bg-card rounded-lg border">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="font-semibold text-lg mb-2">No requests yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-xs mx-auto">No requests yet</p>
+              <Link to="/create-request">
+                <Button>
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Create your first request
+                </Button>
+              </Link>
+            </div>
           ) : (
             requests.slice(0, 3).map((request) => (
               <RequestCard key={request.id} request={request} />
