@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Workflow, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
+// import { cn } from '@/lib/utils';
 
 console.log("LOGIN.TSX FILE LOADED");
 
 
-const roles: { value: UserRole; label: string; description: string }[] = [
-  { value: 'employee', label: 'Employee', description: 'Submit and track your requests' },
-  { value: 'manager', label: 'Manager', description: 'Approve team requests' },
-  { value: 'hr', label: 'HR', description: 'Manage HR workflows' },
-  { value: 'admin', label: 'Admin', description: 'Full system access' },
-];
+// const roles: { value: UserRole; label: string; description: string }[] = [
+//   { value: 'employee', label: 'Employee', description: 'Submit and track your requests' },
+//   { value: 'manager', label: 'Manager', description: 'Approve team requests' },
+//   { value: 'hr', label: 'HR', description: 'Manage HR workflows' },
+//   { value: 'admin', label: 'Admin', description: 'Full system access' },
+// ];
 
 export default function Login() {
   console.log("LOGIN COMPONENT RENDERED");
@@ -25,7 +25,7 @@ export default function Login() {
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('demo@workflowpro.com');
   const [password, setPassword] = useState('demo123');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('employee');
+  // const [selectedRole, setSelectedRole] = useState<UserRole>('employee');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSignIn = async () => {
@@ -140,28 +140,7 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Role Selection (Demo) */}
-              <div className="space-y-2">
-                <Label>Login as (Demo)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {roles.map((role) => (
-                    <button
-                      key={role.value}
-                      type="button"
-                      onClick={() => setSelectedRole(role.value)}
-                      className={cn(
-                        'p-3 rounded-lg border text-left transition-all duration-200',
-                        selectedRole === role.value
-                          ? 'border-primary bg-accent ring-2 ring-primary/20'
-                          : 'border-border hover:border-primary/50 hover:bg-accent/50'
-                      )}
-                    >
-                      <p className="text-sm font-medium">{role.label}</p>
-                      <p className="text-xs text-muted-foreground">{role.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+               {/* modified to remove role selection */}
 
               <Button
                 type="button"
