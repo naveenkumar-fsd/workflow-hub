@@ -46,6 +46,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     // 🔥 res IS ALREADY response.data
     const res = await loginUser({ email, password });
 
+    console.log("[Auth] Login response:", res.data);
+
+
     // 🔥 CORRECT TOKEN ACCESS
     const token = res.token || res.access_token;
     if (!token) {
@@ -58,13 +61,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
     // 🔥 USER DATA
     const userData: User = {
-      id: res.id,
-      name: res.name,
-      email: res.email,
-      role: res.data.role ?? "employee",
-      department: res.department,
-      avatar: res.avatar,
-    };
+  id: String(res.data.id ?? ""),
+  name: res.data.name ?? "User",
+  email: res.data.email ?? email,
+  role: (res.data.role ?? "employee") as UserRole, // 🔥 GUARANTEE
+  department: res.data.department ?? "",
+  avatar: res.data.avatar ?? "",
+};
+
 
     localStorage.setItem("workflowpro_user", JSON.stringify(userData));
     setUser(userData);
