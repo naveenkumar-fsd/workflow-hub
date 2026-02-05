@@ -28,11 +28,15 @@ export const getPendingApprovals = () => {
 };
 
 // APPROVE
-export const approveWorkflow = (id: number) => {
-  return axiosInstance.put(`/admin/workflows/${id}/approve`);
+export const approveWorkflow = (id: number | string) => {
+  const idNum = Number(id);
+  const safeId = Number.isFinite(idNum) ? idNum : 0;
+  return axiosInstance.put(`/admin/workflows/${safeId}/approve`);
 };
 
 // REJECT
-export const rejectWorkflow = (id: number) => {
-  return axiosInstance.put(`/admin/workflows/${id}/reject`);
+export const rejectWorkflow = (id: number | string) => {
+  const idNum = Number(id);
+  const safeId = Number.isFinite(idNum) ? idNum : 0;
+  return axiosInstance.put(`/admin/workflows/${safeId}/reject`);
 };

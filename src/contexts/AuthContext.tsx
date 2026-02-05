@@ -33,58 +33,72 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem("workflowpro_user");
-    return stored ? JSON.parse(stored) : null;
+    try {
+      const stored = localStorage.getItem("workflowpro_user");
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      console.warn("[Auth] Failed to parse stored user", e);
+      return null;
+    }
   });
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const login = async (email: string, password: string) => {
-  setIsLoading(true);
+  const login = async (email: string, password: string, role?: UserRole) => {
+    setIsLoading(true);
 
-  try {
-    // 🔥 res IS ALREADY response.data
-    const res = await loginUser({ email, password });
+    try {
+      const res = await loginUser({ email, password });
 
-    console.log("[Auth] Login response:", res.data);
+      // loginUser returns response.data (variable shapes depending on backend)
+      const payload = res ?? {};
 
+      // Find token in common locations
+      const token =
+        String(payload?.token ?? payload?.access_token ?? localStorage.getItem("token") ?? "").trim();
 
-    // 🔥 CORRECT TOKEN ACCESS
-    const token = res.token || res.access_token;
-    if (!token) {
-      throw new Error("No token received from server");
+      if (!token) {
+        console.error("[Auth] No token received from server", payload);
+        throw new Error("No token received from server");
+      }
+
+      try {
+        localStorage.setItem("token", token);
+      } catch (e) {
+        console.warn("[Auth] Failed to persist token", e);
+      }
+
+      // Normalize user object from multiple possible shapes
+      const rawUser = payload?.user ?? payload?.data ?? payload;
+
+      const userData: User = {
+        id: String(rawUser?.id ?? rawUser?.userId ?? rawUser?.uid ?? "").trim(),
+        name: String(rawUser?.name ?? rawUser?.fullName ?? rawUser?.username ?? "User"),
+        email: String(rawUser?.email ?? email ?? "") || "",
+        role: (String(rawUser?.role ?? payload?.role ?? "employee") as UserRole) || "employee",
+        department: String(rawUser?.department ?? "") || undefined,
+        avatar: String(rawUser?.avatar ?? rawUser?.photo ?? "") || undefined,
+      };
+
+      try {
+        localStorage.setItem("workflowpro_user", JSON.stringify(userData));
+      } catch (e) {
+        console.warn("[Auth] Failed to persist user", e);
+      }
+
+      setUser(userData);
+
+      toast.success("Login successful!", {
+        description: `Welcome back, ${userData.name}`,
+      });
+    } catch (error) {
+      console.error("[Auth] Login failed:", error);
+      toast.error("Login failed");
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-
-    // 🔥 SAVE TOKEN
-    localStorage.setItem("token", token);
-    console.log("[Auth] Token saved:", token);
-
-    // 🔥 USER DATA
-    const userData: User = {
-  id: String(res.data.id ?? ""),
-  name: res.data.name ?? "User",
-  email: res.data.email ?? email,
-  role: (res.data.role ?? "employee") as UserRole, // 🔥 GUARANTEE
-  department: res.data.department ?? "",
-  avatar: res.data.avatar ?? "",
-};
-
-
-    localStorage.setItem("workflowpro_user", JSON.stringify(userData));
-    setUser(userData);
-
-    toast.success("Login successful!", {
-      description: `Welcome back, ${userData.name}`,
-    });
-
-  } catch (error) {
-    console.error("[Auth] Login failed:", error);
-    toast.error("Login failed");
-    throw error;
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
 
   const logout = useCallback(() => {

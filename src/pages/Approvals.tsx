@@ -59,19 +59,19 @@ export default function Approvals() {
 
         const mappedRequests: ApprovalRequest[] = (response.data || []).map(
   (workflow: WorkflowItem) => {
-    const normalizedType = (workflow.type || 'leave').toLowerCase();
+    const normalizedType = String(workflow.type ?? 'leave').toLowerCase();
 
     return {
-      id: String(workflow.id || ''),
+      id: String(workflow.id ?? ''),
       type: normalizedType,
-      title: workflow.title || 'Untitled Request',
-      description: workflow.description || '',
-      createdAt: workflow.createdAt || new Date().toISOString(),
+      title: workflow.title ?? 'Untitled Request',
+      description: workflow.description ?? '',
+      createdAt: workflow.createdAt ?? new Date().toISOString(),
       createdBy: {
-        name: workflow.createdBy?.name || 'Unknown',
-        department: workflow.createdBy?.department || 'Unknown',
+        name: workflow.createdBy?.name ?? 'Unknown',
+        department: workflow.createdBy?.department ?? 'Unknown',
       },
-      isOverdue: workflow.isOverdue || false,
+      isOverdue: Boolean(workflow.isOverdue ?? false),
     };
   }
 );
@@ -99,9 +99,9 @@ export default function Approvals() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
-        request.title.toLowerCase().includes(query) ||
-        request.createdBy.name.toLowerCase().includes(query) ||
-        request.id.toLowerCase().includes(query)
+        String(request.title ?? "").toLowerCase().includes(query) ||
+        String(request.createdBy?.name ?? "").toLowerCase().includes(query) ||
+        String(request.id ?? "").toLowerCase().includes(query)
       );
     }
     return true;
@@ -109,8 +109,19 @@ export default function Approvals() {
 
   const handleApprove = async (id: string) => {
     setProcessingIds(prev => new Set(prev).add(id));
+    const idNum = Number(id);
+    if (!Number.isFinite(idNum) || idNum <= 0) {
+      toast.error('Invalid request id');
+      setProcessingIds(prev => {
+        const updated = new Set(prev);
+        updated.delete(id);
+        return updated;
+      });
+      return;
+    }
+
     try {
-      await approveWorkflow(Number(id));
+      await approveWorkflow(idNum);
       setRequests(prev => prev.filter(r => r.id !== id));
       toast.success('Request approved', {
         description: `Request ${id} has been approved successfully.`,
@@ -131,8 +142,19 @@ export default function Approvals() {
 
   const handleReject = async (id: string) => {
     setProcessingIds(prev => new Set(prev).add(id));
+    const idNum = Number(id);
+    if (!Number.isFinite(idNum) || idNum <= 0) {
+      toast.error('Invalid request id');
+      setProcessingIds(prev => {
+        const updated = new Set(prev);
+        updated.delete(id);
+        return updated;
+      });
+      return;
+    }
+
     try {
-      await rejectWorkflow(Number(id));
+      await rejectWorkflow(idNum);
       setRequests(prev => prev.filter(r => r.id !== id));
       toast.success('Request rejected', {
         description: `Request ${id} has been rejected.`,
@@ -162,7 +184,10 @@ export default function Approvals() {
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <h3 className="font-semibold text-base">{request.title}</h3>
               <Badge variant="outline" className="capitalize">
-                {request.type}
+                {(() => {
+                  const t = String(request.type ?? "");
+                  return t ? t.charAt(0).toUpperCase() + t.slice(1) : "Leave";
+                })()}
               </Badge>
               {request.isOverdue && (
                 <Badge variant="destructive" className="flex items-center gap-1">
@@ -173,7 +198,7 @@ export default function Approvals() {
             </div>
             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{request.description}</p>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span>From: <strong>{request.createdBy.name}</strong></span>
+              <span>From: <strong>{request.createdBy?.name ?? 'Unknown'}</strong></span>
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
                 {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}

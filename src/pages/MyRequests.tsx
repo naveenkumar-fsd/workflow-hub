@@ -44,11 +44,9 @@ export default function MyRequests() {
 
         const mappedData: Request[] = (res.data || []).map((r: BackendWorkflow) => {
           // Safely coerce backend values to Request type
-          const id = String(r.id || "");
-          const type = (r.type || "leave") as RequestType;
-          const status = (
-  (r.status || "PENDING").toLowerCase()
-) as RequestStatus;
+          const id = String(r.id ?? "");
+          const type = (String(r.type ?? "leave").toLowerCase() || "leave") as RequestType;
+          const status = (String(r.status ?? "PENDING").toLowerCase() || "pending") as RequestStatus;
 
 
           return {
@@ -134,23 +132,42 @@ export default function MyRequests() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="font-semibold text-base truncate">{request.title}</h3>
-            <Badge className={typeConfig[request.type].color} variant="outline">
-              {typeConfig[request.type].label}
-            </Badge>
+            {(() => {
+              const t = (request.type as RequestType) || "leave";
+              const cfg = typeConfig[t] ?? typeConfig.leave;
+              return (
+                <Badge className={cfg.color} variant="outline">
+                  {cfg.label}
+                </Badge>
+              );
+            })()}
           </div>
           <p className="text-sm text-muted-foreground line-clamp-1">{request.description}</p>
           <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}
+              {(() => {
+                try {
+                  return formatDistanceToNow(new Date(request.createdAt), { addSuffix: true });
+                } catch (e) {
+                  return "some time ago";
+                }
+              })()}
             </span>
             <span>ID: {request.id}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className={statusConfig[request.status]} variant="outline">
-            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-          </Badge>
+          {(() => {
+            const s = (request.status as RequestStatus) || "pending";
+            const cfg = statusConfig[s] ?? statusConfig.pending;
+            const label = s && s.length ? s.charAt(0).toUpperCase() + s.slice(1) : "Pending";
+            return (
+              <Badge className={cfg} variant="outline">
+                {label}
+              </Badge>
+            );
+          })()}
         </div>
       </div>
     </div>

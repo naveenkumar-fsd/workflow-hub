@@ -5,29 +5,30 @@ const BASE_URL = "http://localhost:8081/api";
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 /**
  * REQUEST INTERCEPTOR
- * Attach JWT token if present
+ * Attach JWT token safely (Axios v1 compatible)
  */
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem("token");
 
+    // ✅ Axios v1 correct way
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.set("Authorization", `Bearer ${token}`);
       console.debug(
-        `[Axios] ${config.method?.toUpperCase()} ${config.url} → token attached`
+        `[Axios] ${String(config.method)?.toUpperCase()} ${config.url} → token attached`
       );
     } else {
-      console.warn(
-        `[Axios] ${config.method?.toUpperCase()} ${config.url} → NO TOKEN`
+      console.debug(
+        `[Axios] ${String(config.method)?.toUpperCase()} ${config.url} → no token`
       );
     }
+
+    // Always ensure content type
+    config.headers.set("Content-Type", "application/json");
 
     return config;
   },
@@ -39,24 +40,26 @@ axiosInstance.interceptors.request.use(
 
 /**
  * RESPONSE INTERCEPTOR
- * Handle auth errors globally
+ * Handle auth errors safely
  */
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    const status = error.response?.status;
+    const status = error?.response?.status;
 
     if (status === 401) {
-      console.error("[Axios] 401 Unauthorized → Logging out");
+      console.warn("[Axios] 401 Unauthorized → redirecting to login");
 
       localStorage.removeItem("token");
       localStorage.removeItem("workflowpro_user");
 
-      window.location.href = "/login";
+      if (!window.location.pathname.startsWith("/login")) {
+        window.location.href = "/login";
+      }
     }
 
     if (status === 403) {
-      console.error("[Axios] 403 Forbidden → Access denied");
+      console.warn("[Axios] 403 Forbidden → access denied");
     }
 
     return Promise.reject(error);
