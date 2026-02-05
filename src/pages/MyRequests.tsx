@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { AxiosError } from "axios";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,9 @@ export default function MyRequests() {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
         const res = await getUserWorkflows();
 
         interface BackendWorkflow {
@@ -64,10 +68,37 @@ export default function MyRequests() {
         });
 
         setMyRequests(mappedData);
-        setError(null);
       } catch (err) {
-        console.error("Failed to fetch user workflows", err);
-        setError("Failed to load requests. Please try again.");
+        const axiosError = err as AxiosError;
+        let errorMessage = "Failed to load requests. Please try again.";
+
+        if (axiosError.response) {
+          // Server responded with error status
+          const status = axiosError.response.status;
+          const data = axiosError.response.data as Record<string, unknown>;
+          
+          if (status === 401) {
+            errorMessage = "Your session expired. Please log in again.";
+          } else if (status === 403) {
+            errorMessage = "You don't have permission to view requests.";
+          } else if (status === 404) {
+            errorMessage = "Requests endpoint not found.";
+          } else if (status >= 500) {
+            errorMessage = "Server error. Please try again later.";
+          } else if (data?.message) {
+            errorMessage = String(data.message);
+          }
+        } else if (axiosError.request) {
+          // Request made but no response received
+          errorMessage = "Network error. Please check your connection.";
+        } else {
+          // Error in request setup
+          errorMessage = axiosError.message || "An unexpected error occurred.";
+        }
+
+        console.error("[MyRequests] Failed to fetch workflows:", err);
+        setError(errorMessage);
+        setMyRequests([]);
       } finally {
         setLoading(false);
       }
