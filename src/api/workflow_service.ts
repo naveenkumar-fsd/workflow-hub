@@ -1,40 +1,24 @@
 import axiosInstance from "./axios";
 
-/**
- * USER – My workflows
- */
+/* ============================
+   USER – MY REQUESTS
+============================ */
 export const getUserWorkflows = () => {
-  console.log("[WorkflowService] Fetching user workflows");
-  return axiosInstance.get("/workflows");
+  console.log("[WorkflowService] Fetching MY workflows");
+  return axiosInstance.get("/workflows/my");
 };
 
-/**
- * ADMIN – Pending approvals
- */
+/* ============================
+   ADMIN – PENDING APPROVALS
+============================ */
 export const getPendingApprovals = () => {
   console.log("[WorkflowService] Fetching pending approvals");
-  return axiosInstance.get("/workflows/pending");
+  return axiosInstance.get("/admin/workflows/pending");
 };
 
-/**
- * ADMIN – Approve workflow
- */
-export const approveWorkflow = (id: string) => {
-  console.log("[WorkflowService] Approving workflow:", id);
-  return axiosInstance.put(`/workflows/${id}/approve`);
-};
-
-/**
- * ADMIN – Reject workflow
- */
-export const rejectWorkflow = (id: string) => {
-  console.log("[WorkflowService] Rejecting workflow:", id);
-  return axiosInstance.put(`/workflows/${id}/reject`);
-};
-
-/**
- * CREATE WORKFLOW
- */
+/* ============================
+   CREATE WORKFLOW
+============================ */
 export interface CreateWorkflowPayload {
   type: string;
   title: string;
@@ -43,6 +27,19 @@ export interface CreateWorkflowPayload {
 }
 
 export const createWorkflow = (payload: CreateWorkflowPayload) => {
-  console.log("[WorkflowService] Creating workflow:", payload);
+  console.log("[WorkflowService] Creating workflow:", payload.title);
   return axiosInstance.post("/workflows", payload);
+};
+
+/* ============================
+   ADMIN – APPROVE / REJECT
+============================ */
+export const approveWorkflow = (id: number) => {
+  console.log("[WorkflowService] Approving workflow:", id);
+  return axiosInstance.put(`/admin/workflows/${id}/approve`);
+};
+
+export const rejectWorkflow = (id: number) => {
+  console.log("[WorkflowService] Rejecting workflow:", id);
+  return axiosInstance.put(`/admin/workflows/${id}/reject`);
 };
