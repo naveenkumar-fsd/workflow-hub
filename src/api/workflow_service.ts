@@ -34,12 +34,12 @@ export const createWorkflow = (payload: CreateWorkflowPayload) => {
 /* ============================
    ADMIN – APPROVE / REJECT
 ============================ */
-export const approveWorkflow = (id: number) => {
+export const approveWorkflow = (id: string | number) => {
   console.log("[WorkflowService] Approving workflow:", id);
   return axiosInstance.put(`/admin/workflows/${id}/approve`);
 };
 
-export const rejectWorkflow = (id: number) => {
+export const rejectWorkflow = (id: string | number) => {
   console.log("[WorkflowService] Rejecting workflow:", id);
   return axiosInstance.put(`/admin/workflows/${id}/reject`);
 };

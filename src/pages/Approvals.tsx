@@ -74,10 +74,11 @@ export default function Approvals() {
 
         setRequests(mappedRequests);
       } catch (error) {
-        console.error('Failed to fetch approvals:', error);
+        console.error('[Approvals] Failed to fetch pending approvals:', error);
         toast.error('Failed to load approvals', {
           description: 'Please try again later.',
         });
+        setRequests([]);
       } finally {
         setLoading(false);
       }
@@ -110,7 +111,7 @@ export default function Approvals() {
         description: `Request ${id} has been approved successfully.`,
       });
     } catch (error) {
-      console.error('Failed to approve request:', error);
+      console.error('[Approvals] Failed to approve request:', error);
       toast.error('Failed to approve request', {
         description: 'Please try again.',
       });
@@ -132,7 +133,7 @@ export default function Approvals() {
         description: `Request ${id} has been rejected.`,
       });
     } catch (error) {
-      console.error('Failed to reject request:', error);
+      console.error('[Approvals] Failed to reject request:', error);
       toast.error('Failed to reject request', {
         description: 'Please try again.',
       });
