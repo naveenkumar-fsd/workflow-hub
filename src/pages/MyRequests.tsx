@@ -10,20 +10,27 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/AuthContext";
 import { PlusCircle, FileText, Calendar, AlertCircle, Loader2 } from "lucide-react";
-import { getUserWorkflows } from "@/api/workflow_service";
-import { Request, RequestType, RequestStatus } from "@/data/mockData";
+import { getUserWorkflows, WorkflowResponse } from "@/api/workflow_service";
 import { formatDistanceToNow } from "date-fns";
 
-export default function MyRequests() {
-  const { user } = useAuth();
+type RequestStatus = "pending" | "approved" | "rejected";
+type RequestType = "leave" | "expense" | "asset" | "access";
 
-  const [myRequests, setMyRequests] = useState<Request[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+interface RequestItem {
+  id: string;
+  title: string;
+  description: string;
+  type: RequestType;
+  status: RequestStatus;
+  createdAt: string;
+}
+
+export default function MyRequests() {
+  const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  /* 🔹 Fetch user workflows */
   useEffect(() => {
     const fetchRequests = async () => {
       try {
@@ -32,161 +39,75 @@ export default function MyRequests() {
 
         const res = await getUserWorkflows();
 
-        interface BackendWorkflow {
-          id?: string | number;
-          title?: string;
-          description?: string;
-          type?: string | null;
-          status?: string;
-          createdAt?: string;
-          [key: string]: unknown;
-        }
+        // 🔥 VERY IMPORTANT
+        const data = Array.isArray(res.data) ? res.data : [];
 
-        const mappedData: Request[] = (res.data || []).map((r: BackendWorkflow) => {
-          // Safely coerce backend values to Request type
-          const id = String(r.id ?? "");
-          const type = (String(r.type ?? "leave").toLowerCase() || "leave") as RequestType;
-          const status = (String(r.status ?? "PENDING").toLowerCase() || "pending") as RequestStatus;
+        const mapped: RequestItem[] = data.map((r: WorkflowResponse) => ({
+  id: String(r.id),
+  title: r.title,
+  description: r.description,
+  type: r.type,
+  status: r.status,
+  createdAt: r.createdAt,
+}));
 
 
-          return {
-            id,
-            title: r.title ?? "Untitled Request",
-            description: r.description ?? "",
-            type,
-            status,
-            createdAt: r.createdAt ?? new Date().toISOString(),
-            updatedAt: r.createdAt ?? new Date().toISOString(),
-            createdBy: {
-              id: "unknown",
-              name: user?.name || "Unknown",
-              department: user?.department || "Unknown",
-            },
-            metadata: {},
-            timeline: [],
-            priority: "medium" as const,
-          };
-        });
-
-        setMyRequests(mappedData);
+        setRequests(mapped);
       } catch (err) {
-        const axiosError = err as AxiosError;
-        let errorMessage = "Failed to load requests. Please try again.";
-
-        if (axiosError.response) {
-          // Server responded with error status
-          const status = axiosError.response.status;
-          const data = axiosError.response.data as Record<string, unknown>;
-          
-          if (status === 401) {
-            errorMessage = "Your session expired. Please log in again.";
-          } else if (status === 403) {
-            errorMessage = "You don't have permission to view requests.";
-          } else if (status === 404) {
-            errorMessage = "Requests endpoint not found.";
-          } else if (status >= 500) {
-            errorMessage = "Server error. Please try again later.";
-          } else if (data?.message) {
-            errorMessage = String(data.message);
-          }
-        } else if (axiosError.request) {
-          // Request made but no response received
-          errorMessage = "Network error. Please check your connection.";
-        } else {
-          // Error in request setup
-          errorMessage = axiosError.message || "An unexpected error occurred.";
-        }
-
-        console.error("[MyRequests] Failed to fetch workflows:", err);
-        setError(errorMessage);
-        setMyRequests([]);
+        const e = err as AxiosError;
+        console.error("[MyRequests] API error:", e);
+        setError("Failed to load requests. Please try again.");
+        setRequests([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchRequests();
-  }, [user]);
+  }, []);
 
-  // Request type labels and colors
-  const typeConfig: Record<RequestType, { label: string; color: string }> = {
-    leave: { label: "Leave", color: "bg-blue-100 text-blue-800" },
-    expense: { label: "Expense", color: "bg-green-100 text-green-800" },
-    asset: { label: "Asset", color: "bg-purple-100 text-purple-800" },
-    access: { label: "Access", color: "bg-orange-100 text-orange-800" },
-  };
-
-  // Status colors
-  const statusConfig: Record<RequestStatus, string> = {
-    draft: "bg-gray-100 text-gray-800",
+  const statusColor: Record<RequestStatus, string> = {
     pending: "bg-yellow-100 text-yellow-800",
     approved: "bg-green-100 text-green-800",
     rejected: "bg-red-100 text-red-800",
-    escalated: "bg-orange-100 text-orange-800",
   };
 
-  // Request list item component
-  const RequestItem = ({ request }: { request: Request }) => (
-    <div className="bg-card rounded-lg border border-border p-4 hover:border-primary/50 transition-colors">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="font-semibold text-base truncate">{request.title}</h3>
-            {(() => {
-              const t = (request.type as RequestType) || "leave";
-              const cfg = typeConfig[t] ?? typeConfig.leave;
-              return (
-                <Badge className={cfg.color} variant="outline">
-                  {cfg.label}
-                </Badge>
-              );
-            })()}
-          </div>
-          <p className="text-sm text-muted-foreground line-clamp-1">{request.description}</p>
-          <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+  const typeLabel: Record<RequestType, string> = {
+    leave: "Leave",
+    expense: "Expense",
+    asset: "Asset",
+    access: "Access",
+  };
+
+  const RequestCard = ({ r }: { r: RequestItem }) => (
+    <div className="bg-card border rounded-lg p-4">
+      <div className="flex justify-between items-start gap-4">
+        <div>
+          <h3 className="font-semibold">{r.title}</h3>
+          <p className="text-sm text-muted-foreground">{r.description}</p>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              {(() => {
-                try {
-                  return formatDistanceToNow(new Date(request.createdAt), { addSuffix: true });
-                } catch (e) {
-                  return "some time ago";
-                }
-              })()}
+              {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
             </span>
-            <span>ID: {request.id}</span>
+            <span>ID: {r.id}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {(() => {
-            const s = (request.status as RequestStatus) || "pending";
-            const cfg = statusConfig[s] ?? statusConfig.pending;
-            const label = s && s.length ? s.charAt(0).toUpperCase() + s.slice(1) : "Pending";
-            return (
-              <Badge className={cfg} variant="outline">
-                {label}
-              </Badge>
-            );
-          })()}
+        <div className="flex flex-col gap-2 items-end">
+          <Badge variant="outline">{typeLabel[r.type]}</Badge>
+          <Badge className={statusColor[r.status]} variant="outline">
+            {r.status.toUpperCase()}
+          </Badge>
         </div>
       </div>
     </div>
   );
 
-
-  /* 🔹 Group by status */
-  const requestsByStatus = {
-    all: myRequests,
-    pending: myRequests.filter((r) => r.status === "pending"),
-    approved: myRequests.filter((r) => r.status === "approved"),
-    rejected: myRequests.filter((r) => r.status === "rejected"),
-  };
-
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold">My Requests</h1>
             <p className="text-muted-foreground">
@@ -194,122 +115,55 @@ export default function MyRequests() {
             </p>
           </div>
           <Link to="/create-request">
-            <Button variant="hero">
-              <PlusCircle className="w-4 h-4 mr-2" />
+            <Button>
+              <PlusCircle className="h-4 w-4 mr-2" />
               New Request
             </Button>
           </Link>
         </div>
 
-        {/* Loading State */}
+        {/* Loading */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Loader2 className="h-10 w-10 text-muted-foreground animate-spin mb-3" />
-            <p className="text-muted-foreground">Loading your requests...</p>
+          <div className="text-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+            <p className="text-muted-foreground">Loading requests...</p>
           </div>
         )}
 
-        {/* Error State */}
+        {/* Error */}
         {error && !loading && (
-          <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
-            <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium text-destructive">Error loading requests</p>
-              <p className="text-sm text-destructive/90">{error}</p>
-            </div>
+          <div className="flex gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <p className="text-destructive">{error}</p>
           </div>
         )}
 
         {/* Content */}
         {!loading && !error && (
           <>
-            {myRequests.length === 0 ? (
-              <div className="text-center py-16 bg-card rounded-lg border">
-                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-semibold text-lg mb-2">No requests yet</h3>
-                <p className="text-muted-foreground mb-6 max-w-xs mx-auto">
-                  You haven't submitted any requests. Start by creating your first request.
-                </p>
-                <Link to="/create-request">
-                  <Button>
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Create Request
-                  </Button>
-                </Link>
+            {requests.length === 0 ? (
+              <div className="text-center py-16 border rounded-lg">
+                <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No requests yet</p>
               </div>
             ) : (
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 max-w-md">
-                  <TabsTrigger value="all">
-                    All <Badge variant="secondary" className="ml-1">{myRequests.length}</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="pending">
-                    Pending{" "}
-                    <Badge className="ml-1">{myRequests.filter(r => r.status === "pending").length}</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="approved">
-                    Approved{" "}
-                    <Badge variant="outline" className="ml-1">{myRequests.filter(r => r.status === "approved").length}</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="rejected">
-                    Rejected{" "}
-                    <Badge variant="outline" className="ml-1">{myRequests.filter(r => r.status === "rejected").length}</Badge>
-                  </TabsTrigger>
+              <Tabs defaultValue="all">
+                <TabsList className="grid grid-cols-4 max-w-md">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="pending">Pending</TabsTrigger>
+                  <TabsTrigger value="approved">Approved</TabsTrigger>
+                  <TabsTrigger value="rejected">Rejected</TabsTrigger>
                 </TabsList>
 
-                {/* All Requests Tab */}
-                <TabsContent value="all" className="mt-6">
-                  <div className="space-y-3">
-                    {myRequests.map((request) => (
-                      <RequestItem key={request.id} request={request} />
-                    ))}
-                  </div>
-                </TabsContent>
-
-                {/* Pending Tab */}
-                <TabsContent value="pending" className="mt-6">
-                  {myRequests.filter(r => r.status === "pending").length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p>No pending requests</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {myRequests.filter(r => r.status === "pending").map((request) => (
-                        <RequestItem key={request.id} request={request} />
+                {["all", "pending", "approved", "rejected"].map((s) => (
+                  <TabsContent key={s} value={s} className="mt-4 space-y-3">
+                    {requests
+                      .filter((r) => s === "all" || r.status === s)
+                      .map((r) => (
+                        <RequestCard key={r.id} r={r} />
                       ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Approved Tab */}
-                <TabsContent value="approved" className="mt-6">
-                  {myRequests.filter(r => r.status === "approved").length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p>No approved requests</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {myRequests.filter(r => r.status === "approved").map((request) => (
-                        <RequestItem key={request.id} request={request} />
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Rejected Tab */}
-                <TabsContent value="rejected" className="mt-6">
-                  {myRequests.filter(r => r.status === "rejected").length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p>No rejected requests</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {myRequests.filter(r => r.status === "rejected").map((request) => (
-                        <RequestItem key={request.id} request={request} />
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
+                  </TabsContent>
+                ))}
               </Tabs>
             )}
           </>

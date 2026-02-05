@@ -1,42 +1,43 @@
 import axiosInstance from "./axios";
 
-/* ================= USER ================= */
+// src/api/workflow_service.ts
 
-// MY REQUESTS
-export const getUserWorkflows = () => {
-  return axiosInstance.get("/workflows/my");
-};
+export type WorkflowType = "leave" | "expense" | "asset" | "access";
+export type WorkflowStatus = "pending" | "approved" | "rejected";
 
-// CREATE REQUEST
 export interface CreateWorkflowPayload {
-  type: string;
   title: string;
   description: string;
+  type: WorkflowType;
   priority?: "low" | "medium" | "high";
 }
 
-export const createWorkflow = (payload: CreateWorkflowPayload) => {
-  return axiosInstance.post("/workflows", payload);
+export interface WorkflowResponse {
+  id: number;
+  title: string;
+  description: string;
+  type: WorkflowType;
+  status: WorkflowStatus;
+  createdAt: string;
+}
+
+export const getUserWorkflows = () => {
+  return axiosInstance.get<WorkflowResponse[]>("/workflows/my");
 };
 
-
-/* ================= ADMIN ================= */
-
-// PENDING APPROVALS
 export const getPendingApprovals = () => {
-  return axiosInstance.get("/admin/workflows/pending");
+  return axiosInstance.get<WorkflowResponse[]>("/admin/workflows/pending");
 };
 
-// APPROVE
-export const approveWorkflow = (id: number | string) => {
-  const idNum = Number(id);
-  const safeId = Number.isFinite(idNum) ? idNum : 0;
-  return axiosInstance.put(`/admin/workflows/${safeId}/approve`);
+export const createWorkflow = (payload: CreateWorkflowPayload) => {
+  return axiosInstance.post<WorkflowResponse>("/workflows", payload);
 };
 
-// REJECT
-export const rejectWorkflow = (id: number | string) => {
-  const idNum = Number(id);
-  const safeId = Number.isFinite(idNum) ? idNum : 0;
-  return axiosInstance.put(`/admin/workflows/${safeId}/reject`);
+export const approveWorkflow = (id: number) => {
+  return axiosInstance.put(`/admin/workflows/${id}/approve`);
 };
+
+export const rejectWorkflow = (id: number) => {
+  return axiosInstance.put(`/admin/workflows/${id}/reject`);
+};
+
