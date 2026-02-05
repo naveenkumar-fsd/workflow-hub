@@ -36,7 +36,7 @@ export default function MyRequests() {
           id?: string | number;
           title?: string;
           description?: string;
-          type?: string;
+          type?: string | null;
           status?: string;
           createdAt?: string;
           [key: string]: unknown;
@@ -46,7 +46,10 @@ export default function MyRequests() {
           // Safely coerce backend values to Request type
           const id = String(r.id || "");
           const type = (r.type || "leave") as RequestType;
-          const status = (r.status || "pending") as RequestStatus;
+          const status = (
+  (r.status || "PENDING").toLowerCase()
+) as RequestStatus;
+
 
           return {
             id,

@@ -58,19 +58,24 @@ export default function Approvals() {
         const response = await getPendingApprovals();
 
         const mappedRequests: ApprovalRequest[] = (response.data || []).map(
-          (workflow: WorkflowItem) => ({
-            id: String(workflow.id || ''),
-            type: workflow.type || 'leave',
-            title: workflow.title || 'Untitled Request',
-            description: workflow.description || '',
-            createdAt: workflow.createdAt || new Date().toISOString(),
-            createdBy: {
-              name: workflow.createdBy?.name || 'Unknown',
-              department: workflow.createdBy?.department || 'Unknown',
-            },
-            isOverdue: workflow.isOverdue || false,
-          })
-        );
+  (workflow: WorkflowItem) => {
+    const normalizedType = (workflow.type || 'leave').toLowerCase();
+
+    return {
+      id: String(workflow.id || ''),
+      type: normalizedType,
+      title: workflow.title || 'Untitled Request',
+      description: workflow.description || '',
+      createdAt: workflow.createdAt || new Date().toISOString(),
+      createdBy: {
+        name: workflow.createdBy?.name || 'Unknown',
+        department: workflow.createdBy?.department || 'Unknown',
+      },
+      isOverdue: workflow.isOverdue || false,
+    };
+  }
+);
+
 
         setRequests(mappedRequests);
       } catch (error) {
@@ -105,7 +110,7 @@ export default function Approvals() {
   const handleApprove = async (id: string) => {
     setProcessingIds(prev => new Set(prev).add(id));
     try {
-      await approveWorkflow(id);
+      await approveWorkflow(Number(id));
       setRequests(prev => prev.filter(r => r.id !== id));
       toast.success('Request approved', {
         description: `Request ${id} has been approved successfully.`,
@@ -127,7 +132,7 @@ export default function Approvals() {
   const handleReject = async (id: string) => {
     setProcessingIds(prev => new Set(prev).add(id));
     try {
-      await rejectWorkflow(id);
+      await rejectWorkflow(Number(id));
       setRequests(prev => prev.filter(r => r.id !== id));
       toast.success('Request rejected', {
         description: `Request ${id} has been rejected.`,

@@ -1,24 +1,13 @@
 import axiosInstance from "./axios";
 
-/* ============================
-   USER – MY REQUESTS
-============================ */
+/* ================= USER ================= */
+
+// MY REQUESTS
 export const getUserWorkflows = () => {
-  console.log("[WorkflowService] Fetching MY workflows");
   return axiosInstance.get("/workflows/my");
 };
 
-/* ============================
-   ADMIN – PENDING APPROVALS
-============================ */
-export const getPendingApprovals = () => {
-  console.log("[WorkflowService] Fetching pending approvals");
-  return axiosInstance.get("/admin/workflows/pending");
-};
-
-/* ============================
-   CREATE WORKFLOW
-============================ */
+// CREATE REQUEST
 export interface CreateWorkflowPayload {
   type: string;
   title: string;
@@ -27,19 +16,23 @@ export interface CreateWorkflowPayload {
 }
 
 export const createWorkflow = (payload: CreateWorkflowPayload) => {
-  console.log("[WorkflowService] Creating workflow:", payload.title);
   return axiosInstance.post("/workflows", payload);
 };
 
-/* ============================
-   ADMIN – APPROVE / REJECT
-============================ */
-export const approveWorkflow = (id: string | number) => {
-  console.log("[WorkflowService] Approving workflow:", id);
+
+/* ================= ADMIN ================= */
+
+// PENDING APPROVALS
+export const getPendingApprovals = () => {
+  return axiosInstance.get("/admin/workflows/pending");
+};
+
+// APPROVE
+export const approveWorkflow = (id: number) => {
   return axiosInstance.put(`/admin/workflows/${id}/approve`);
 };
 
-export const rejectWorkflow = (id: string | number) => {
-  console.log("[WorkflowService] Rejecting workflow:", id);
+// REJECT
+export const rejectWorkflow = (id: number) => {
   return axiosInstance.put(`/admin/workflows/${id}/reject`);
 };

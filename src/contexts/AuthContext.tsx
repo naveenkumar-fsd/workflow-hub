@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       id: res.id,
       name: res.name,
       email: res.email,
-      role: res.role || "employee",
+      role: res.data.role ?? "employee",
       department: res.department,
       avatar: res.avatar,
     };
