@@ -1,5 +1,6 @@
-import api from "./axios";
+import axiosInstance from "./axios";
 
 export const loginUser = (data: { email: string; password: string }) => {
-  return api.post("/auth/login", data);
+  console.log("[AuthService] Calling login API with email:", data.email);
+  return axiosInstance.post("/auth/login", data);
 };

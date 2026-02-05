@@ -1,19 +1,23 @@
-import api from "./axios";
+import axiosInstance from "./axios";
 
 export const getUserWorkflows = () => {
-  return api.get("/user/workflows");
+  console.log("[WorkflowService] Fetching user workflows");
+  return axiosInstance.get("/user/workflows");
 };
 
 export const getPendingApprovals = () => {
-  return api.get("/admin/workflows");
+  console.log("[WorkflowService] Fetching pending approvals");
+  return axiosInstance.get("/admin/workflows");
 };
 
 export const approveWorkflow = (id: string) => {
-  return api.put(`/admin/workflows/${id}/approve`);
+  console.log("[WorkflowService] Approving workflow:", id);
+  return axiosInstance.put(`/admin/workflows/${id}/approve`);
 };
 
 export const rejectWorkflow = (id: string) => {
-  return api.put(`/admin/workflows/${id}/reject`);
+  console.log("[WorkflowService] Rejecting workflow:", id);
+  return axiosInstance.put(`/admin/workflows/${id}/reject`);
 };
 
 export interface CreateWorkflowPayload {
@@ -24,5 +28,6 @@ export interface CreateWorkflowPayload {
 }
 
 export const createWorkflow = (payload: CreateWorkflowPayload) => {
-  return api.post("/workflows", payload);
+  console.log("[WorkflowService] Creating workflow:", payload.title);
+  return axiosInstance.post("/workflows", payload);
 };

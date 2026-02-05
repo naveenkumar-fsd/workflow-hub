@@ -39,58 +39,72 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // 🔐 REAL LOGIN (Backend API)
-  //example modify
   const login = async (email: string, password: string) => {
-  setIsLoading(true);
+    setIsLoading(true);
 
-  try {
-    const res = await loginUser({ email, password });
+    try {
+      const res = await loginUser({ email, password });
 
-    const token = res.data.token;
+      // Extract token from response
+      const token = res.data.token || res.data.access_token;
+      if (!token) {
+        throw new Error("No token received from server");
+      }
 
-    // 🔥 STORE JWT
-    localStorage.setItem("token", token);
+      // Store token in localStorage - this will be picked up by axios interceptor
+      localStorage.setItem("token", token);
+      console.log("[Auth] Token saved to localStorage");
 
-    setUser({
-  id: res.data.id,
-  name: res.data.name,
-  email: res.data.email,
-  role: res.data.role,
-});
+      // Store user info
+      const userData: User = {
+        id: res.data.id,
+        name: res.data.name,
+        email: res.data.email,
+        role: res.data.role || "employee",
+        department: res.data.department,
+        avatar: res.data.avatar,
+      };
 
-    toast.success("Login successful!", {
-      description: `Welcome back, ${res.data.name}!`,
-    });
+      localStorage.setItem("workflowpro_user", JSON.stringify(userData));
+      setUser(userData);
 
-    setIsLoading(false);
-  } catch (error) {
-    setIsLoading(false);
-    const errorMessage = error instanceof Error ? error.message : "Login failed. Please try again.";
-    toast.error("Login failed", {
-      description: errorMessage,
-    });
-    throw error;
-  }
-};
+      console.log("[Auth] Login successful for user:", userData.email);
+      toast.success("Login successful!", {
+        description: `Welcome back, ${userData.name}!`,
+      });
 
+      setIsLoading(false);
+    } catch (error) {
+      setIsLoading(false);
+      console.error("[Auth] Login failed:", error);
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Login failed. Please try again.";
+      toast.error("Login failed", {
+        description: errorMessage,
+      });
+      throw error;
+    }
+  };
 
   const logout = useCallback(() => {
+    console.log("[Auth] Logging out user");
     setUser(null);
     localStorage.removeItem("workflowpro_user");
     localStorage.removeItem("token");
+    toast.success("Logged out successfully");
   }, []);
 
+  const value: AuthContextType = {
+    user,
+    isAuthenticated: !!user,
+    login,
+    logout,
+    isLoading,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        login,
-        logout,
-        isLoading,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
