@@ -10,36 +10,55 @@ const axiosInstance: AxiosInstance = axios.create({
   },
 });
 
-// Request Interceptor: Attach JWT token
+/**
+ * REQUEST INTERCEPTOR
+ * Attach JWT token if present
+ */
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem("token");
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.debug(`[Axios] Attached token to ${config.method?.toUpperCase()} ${config.url}`);
+      console.debug(
+        `[Axios] ${config.method?.toUpperCase()} ${config.url} → token attached`
+      );
     } else {
-      console.debug(`[Axios] No token found for ${config.method?.toUpperCase()} ${config.url}`);
+      console.warn(
+        `[Axios] ${config.method?.toUpperCase()} ${config.url} → NO TOKEN`
+      );
     }
+
     return config;
   },
   (error) => {
-    console.error("[Axios] Request interceptor error:", error);
+    console.error("[Axios] Request error:", error);
     return Promise.reject(error);
   }
 );
 
-// Response Interceptor: Handle errors and token refresh
+/**
+ * RESPONSE INTERCEPTOR
+ * Handle auth errors globally
+ */
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 403) {
-      console.error("[Axios] 403 Forbidden - Check token validity and permissions");
-    } else if (error.response?.status === 401) {
-      console.error("[Axios] 401 Unauthorized - Token may be expired");
+    const status = error.response?.status;
+
+    if (status === 401) {
+      console.error("[Axios] 401 Unauthorized → Logging out");
+
       localStorage.removeItem("token");
       localStorage.removeItem("workflowpro_user");
+
       window.location.href = "/login";
     }
+
+    if (status === 403) {
+      console.error("[Axios] 403 Forbidden → Access denied");
+    }
+
     return Promise.reject(error);
   }
 );
