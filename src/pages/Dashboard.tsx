@@ -463,7 +463,6 @@ export default function Dashboard() {
   useEffect(() => {
     // Only fetch when user is available to prevent duplicate calls
     if (!user?.id) {
-      setLoading(false);
       return;
     }
 
@@ -504,9 +503,8 @@ export default function Dashboard() {
 
   if (!user) return null;
 
-  // Use lowercase for role comparisons
-  const normalizedRole = user?.role ?? "";
-  const userRole = typeof normalizedRole === 'string' ? normalizedRole.toLowerCase() : 'employee';
+  // Use user.role directly (already lowercase from auth)
+  const userRole = user.role ?? 'employee';
 
   // Convert WorkflowRequest items (minimal shape) into full Request objects for UI
   const mappedRequests: Request[] = workflows.map((wf) => {

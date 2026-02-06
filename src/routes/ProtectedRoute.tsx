@@ -1,11 +1,11 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth, UserRole } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: UserRole[];
+  allowedRoles?: Array<"employee" | "manager" | "hr" | "admin">;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
@@ -14,7 +14,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
 
-  // Show loading spinner while checking auth
+  // 1️⃣ While auth state is resolving
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -26,20 +26,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
+  // 2️⃣ Not logged in → go to login
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Check role-based access if allowedRoles is specified
-  // Ensure role comparison uses lowercase for consistency
-  if (allowedRoles && user) {
-    const userRole = (user.role as UserRole).toLowerCase() as UserRole;
-    if (!allowedRoles.includes(userRole)) {
-      return <Navigate to="/unauthorized" replace />;
-    }
+  // 3️⃣ Role-based access check (NO logout here ❌)
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
-  // User is authenticated and authorized
+  // 4️⃣ Authenticated + authorized
   return <>{children}</>;
 };
