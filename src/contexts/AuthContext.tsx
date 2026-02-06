@@ -4,10 +4,12 @@ import React, {
   useState,
   useCallback,
   ReactNode,
-  useEffect,
 } from "react";
 import { loginUser } from "@/api/authService";
 import { toast } from "sonner";
+
+/* 🔥 DEBUG: CONFIRM WHICH FILE IS RUNNING */
+console.log("🔥 AUTH CONTEXT VERSION = 2026-02-06 FINAL");
 
 export type UserRole = "employee" | "manager" | "hr" | "admin";
 
@@ -33,24 +35,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  /* ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------- */
   /* STATE */
-  /* ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------- */
 
   const [user, setUser] = useState<User | null>(() => {
     try {
       const stored = localStorage.getItem("workflowpro_user");
       return stored ? JSON.parse(stored) : null;
     } catch {
-      return null; // ❌ NO logout here
+      return null;
     }
   });
 
   const [isLoading, setIsLoading] = useState(false);
 
-  /* ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------- */
   /* LOGIN */
-  /* ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------- */
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -73,8 +75,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const rawUser = payload?.user ?? payload?.data ?? payload;
 
       const userData: User = {
-        id: String(rawUser?.id ?? rawUser?.userId ?? ""),
-        name: String(rawUser?.name ?? rawUser?.username ?? "User"),
+        id: String(rawUser?.id ?? ""),
+        name: String(rawUser?.name ?? "User"),
         email: String(rawUser?.email ?? email),
         role: String(rawUser?.role ?? "employee").toLowerCase() as UserRole,
         department: rawUser?.department ?? undefined,
@@ -96,20 +98,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  /* ------------------------------------------------------------------ */
-  /* LOGOUT */
-  /* ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------- */
+  /* LOGOUT (WITH FULL TRACE) */
+  /* ------------------------------------------------------------- */
 
   const logout = useCallback(() => {
-    console.log("[Auth] Logging out user");
+    console.group("🔥 AUTH LOGOUT CALLED");
+    console.trace("🔥 LOGOUT TRACE");
+    console.groupEnd();
+
     setUser(null);
     localStorage.removeItem("workflowpro_user");
     localStorage.removeItem("token");
   }, []);
 
-  /* ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------- */
   /* CONTEXT VALUE */
-  /* ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------- */
 
   const value: AuthContextType = {
     user,
@@ -126,9 +131,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-/* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------- */
 /* HOOK */
-/* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------- */
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
