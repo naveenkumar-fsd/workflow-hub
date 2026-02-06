@@ -8,8 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Workflow, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 // import { cn } from '@/lib/utils';
 
-console.log("LOGIN.TSX FILE LOADED");
-
 
 // const roles: { value: UserRole; label: string; description: string }[] = [
 //   { value: 'employee', label: 'Employee', description: 'Submit and track your requests' },
@@ -19,8 +17,6 @@ console.log("LOGIN.TSX FILE LOADED");
 // ];
 
 export default function Login() {
-  console.log("LOGIN COMPONENT RENDERED");
-
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('demo@workflowpro.com');

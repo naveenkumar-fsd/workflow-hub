@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Bell, Search, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,11 @@ export function TopNav({ onMenuClick, isMobile }: TopNavProps) {
   const { user, logout } = useAuth();
   const [notifications] = useState(mockNotifications);
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  // Wrap logout in useCallback to ensure stable reference
+  const handleLogout = useCallback(() => {
+    logout();
+  }, [logout]);
 
   if (!user) return null;
 
@@ -119,7 +124,7 @@ export function TopNav({ onMenuClick, isMobile }: TopNavProps) {
             <DropdownMenuItem>Preferences</DropdownMenuItem>
             <DropdownMenuItem>Help & Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout} className="text-destructive">
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

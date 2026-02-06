@@ -4,9 +4,9 @@ import React, {
   useState,
   useCallback,
   ReactNode,
+  useEffect,
 } from "react";
 import { loginUser } from "@/api/authService";
-import { toast } from "sonner";
 
 export type UserRole = "employee" | "manager" | "hr" | "admin";
 
@@ -43,9 +43,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const login = async (email: string, password: string, role?: UserRole) => {
     setIsLoading(true);
+    setLoginError(null);
+    setLoginSuccess(false);
 
     try {
       const res = await loginUser({ email, password });
@@ -75,7 +79,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         id: String(rawUser?.id ?? rawUser?.userId ?? rawUser?.uid ?? "").trim(),
         name: String(rawUser?.name ?? rawUser?.fullName ?? rawUser?.username ?? "User"),
         email: String(rawUser?.email ?? email ?? "") || "",
-        role: (String(rawUser?.role ?? payload?.role ?? "employee") as UserRole) || "employee",
+        role: (String(rawUser?.role ?? payload?.role ?? "employee").toLowerCase() as UserRole) || "employee",
         department: String(rawUser?.department ?? "") || undefined,
         avatar: String(rawUser?.avatar ?? rawUser?.photo ?? "") || undefined,
       };
@@ -87,13 +91,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       setUser(userData);
-
-      toast.success("Login successful!", {
-        description: `Welcome back, ${userData.name}`,
-      });
+      setLoginSuccess(true);
     } catch (error) {
       console.error("[Auth] Login failed:", error);
-      toast.error("Login failed");
+      const errorMsg = error instanceof Error ? error.message : "Login failed";
+      setLoginError(errorMsg);
       throw error;
     } finally {
       setIsLoading(false);
@@ -104,10 +106,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const logout = useCallback(() => {
     console.log("[Auth] Logging out user");
     setUser(null);
+    setLoginSuccess(false);
+    setLoginError(null);
     localStorage.removeItem("workflowpro_user");
     localStorage.removeItem("token");
-    toast.success("Logged out successfully");
   }, []);
+
+
+  // Emit success/error events via useEffect instead of render-time
+  useEffect(() => {
+    if (loginSuccess && user) {
+      // Import toast dynamically in effect to avoid render-time side effects
+      import("sonner").then(({ toast }) => {
+        toast.success("Login successful!", {
+          description: `Welcome back, ${user.name}`,
+        });
+      });
+      setLoginSuccess(false);
+    }
+  }, [loginSuccess, user]);
+
+  useEffect(() => {
+    if (loginError) {
+      import("sonner").then(({ toast }) => {
+        toast.error("Login failed", {
+          description: loginError,
+        });
+      });
+    }
+  }, [loginError]);
 
   const value: AuthContextType = {
     user,

@@ -461,6 +461,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Only fetch when user is available to prevent duplicate calls
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     const fetchRequests = async () => {
       try {
         const response = await getUserWorkflows();
@@ -487,15 +493,20 @@ export default function Dashboard() {
         setWorkflows(normalizedWorkflows);
       } catch (error) {
         console.error('Failed to fetch workflows:', error);
+        setWorkflows([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchRequests();
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id to prevent re-fetching on every render
 
   if (!user) return null;
+
+  // Use lowercase for role comparisons
+  const normalizedRole = user?.role ?? "";
+  const userRole = typeof normalizedRole === 'string' ? normalizedRole.toLowerCase() : 'employee';
 
   // Convert WorkflowRequest items (minimal shape) into full Request objects for UI
   const mappedRequests: Request[] = workflows.map((wf) => {
@@ -521,9 +532,9 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      {user.role === 'employee' && <EmployeeDashboard requests={mappedRequests} loading={loading} />}
-      {user.role === 'manager' && <ManagerDashboard requests={mappedRequests} loading={loading} />}
-      {(user.role === 'hr' || user.role === 'admin') && <AdminDashboard requests={mappedRequests} loading={loading} />}
+      {userRole === 'employee' && <EmployeeDashboard requests={mappedRequests} loading={loading} />}
+      {userRole === 'manager' && <ManagerDashboard requests={mappedRequests} loading={loading} />}
+      {(userRole === 'hr' || userRole === 'admin') && <AdminDashboard requests={mappedRequests} loading={loading} />}
     </DashboardLayout>
   );
 }

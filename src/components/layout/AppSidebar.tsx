@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
@@ -49,10 +49,16 @@ export function AppSidebar({ isCollapsed, onToggle }: AppSidebarProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
 
+  // Wrap logout in useCallback to ensure stable reference and prevent render-time execution
+  const handleLogout = useCallback(() => {
+    logout();
+  }, [logout]);
+
   if (!user) return null;
 
-  // Filter menu items based on user role
-  const filteredNavItems = navItems.filter(item => item.roles.includes(user.role));
+  // Filter menu items based on user role - ensure role is lowercase for comparison
+  const userRole = (user.role as UserRole).toLowerCase() as UserRole;
+  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
 
   return (
     <aside
@@ -118,7 +124,7 @@ export function AppSidebar({ isCollapsed, onToggle }: AppSidebarProps) {
       {/* User Profile */}
       <div className={cn('p-4', isCollapsed && 'flex justify-center')}>
         {isCollapsed ? (
-          <Avatar className="h-8 w-8 cursor-pointer" onClick={logout}>
+          <Avatar className="h-8 w-8 cursor-pointer" onClick={handleLogout} title="Sign out">
             <AvatarImage src={user.avatar} />
             <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
               {user.name.split(' ').map(n => n[0]).join('')}
@@ -139,8 +145,9 @@ export function AppSidebar({ isCollapsed, onToggle }: AppSidebarProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={logout}
+              onClick={handleLogout}
               className="text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              title="Sign out"
             >
               <LogOut className="h-4 w-4" />
             </Button>
