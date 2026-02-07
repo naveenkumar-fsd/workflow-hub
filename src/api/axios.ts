@@ -8,14 +8,18 @@ const api = axios.create({
 // 🔥 REQUEST INTERCEPTOR
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // 🔥 Do NOT attach token for login
+    if (!config.url?.includes("/api/auth/login")) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
+
 
 // OPTIONAL – RESPONSE LOG
 api.interceptors.response.use(
