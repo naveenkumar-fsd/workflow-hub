@@ -2,88 +2,109 @@ import React, {
   createContext,
   useContext,
   useState,
+  useEffect,
   useCallback,
   ReactNode,
 } from "react";
-import { loginUser } from "@/api/authService";
+import { loginUser, LoginResponse } from "@/api/authService";
 import { toast } from "sonner";
 
-/* 🔥 DEBUG: CONFIRM WHICH FILE IS RUNNING */
-console.log("🔥 AUTH CONTEXT VERSION = 2026-02-06 FINAL");
+/* ============================================================
+   DEBUG – CONFIRM FILE VERSION
+   ============================================================ */
+console.log("🔥 AUTH CONTEXT VERSION = JWT CLEAN FINAL");
 
-export type UserRole = "employee" | "manager" | "hr" | "admin";
+/* ============================================================
+   TYPES
+   ============================================================ */
+
+/**
+ * Backend sends roles in UPPERCASE
+ * We keep the same to avoid mismatch
+ */
+export type UserRole = "ADMIN" | "EMPLOYEE";
 
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   role: UserRole;
-  department?: string;
-  avatar?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  isLoading: boolean;
 }
 
+/* ============================================================
+   CONTEXT
+   ============================================================ */
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/* ============================================================
+   PROVIDER
+   ============================================================ */
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  /* ------------------------------------------------------------- */
-  /* STATE */
-  /* ------------------------------------------------------------- */
+  /* ------------------------------------------------------------
+     STATE
+     ------------------------------------------------------------ */
 
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const stored = localStorage.getItem("workflowpro_user");
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
-
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  /* ------------------------------------------------------------- */
-  /* LOGIN */
-  /* ------------------------------------------------------------- */
+  /* ------------------------------------------------------------
+     RESTORE AUTH ON REFRESH
+     ------------------------------------------------------------ */
+
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+
+      if (storedUser && token) {
+        const parsed: User = JSON.parse(storedUser);
+        setUser(parsed);
+      }
+    } catch (err) {
+      console.error("[Auth] Failed to restore session", err);
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+    }
+  }, []);
+
+  /* ------------------------------------------------------------
+     LOGIN
+     ------------------------------------------------------------ */
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
 
     try {
-      const payload = await loginUser({ email, password });
+      const data: LoginResponse = await loginUser({ email, password });
 
-      const token = String(
-        payload?.token ??
-          payload?.access_token ??
-          ""
-      ).trim();
-
-      if (!token) {
-        throw new Error("No token received from server");
+      /* ---------------- TOKEN ---------------- */
+      if (!data.token) {
+        throw new Error("JWT token missing in response");
       }
 
-      localStorage.setItem("token", token);
+      localStorage.setItem("token", data.token);
 
-      const rawUser = payload?.user ?? payload?.data ?? payload;
-
+      /* ---------------- USER ---------------- */
       const userData: User = {
-        id: String(rawUser?.id ?? ""),
-        name: String(rawUser?.name ?? "User"),
-        email: String(rawUser?.email ?? email),
-        role: String(rawUser?.role ?? "employee").toLowerCase() as UserRole,
-        department: rawUser?.department ?? undefined,
-        avatar: rawUser?.avatar ?? undefined,
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        role: data.role, // ADMIN | EMPLOYEE
       };
 
-      localStorage.setItem("workflowpro_user", JSON.stringify(userData));
+      localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
 
       toast.success("Login successful", {
@@ -91,37 +112,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       });
     } catch (error) {
       console.error("[Auth] Login failed", error);
-      toast.error("Login failed");
+      toast.error("Invalid email or password");
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  /* ------------------------------------------------------------- */
-  /* LOGOUT (WITH FULL TRACE) */
-  /* ------------------------------------------------------------- */
+  /* ------------------------------------------------------------
+     LOGOUT
+     ------------------------------------------------------------ */
 
   const logout = useCallback(() => {
-    console.group("🔥 AUTH LOGOUT CALLED");
-    console.trace("🔥 LOGOUT TRACE");
+    console.group("🔥 AUTH LOGOUT");
+    console.trace("Logout called");
     console.groupEnd();
 
     setUser(null);
-    localStorage.removeItem("workflowpro_user");
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
   }, []);
 
-  /* ------------------------------------------------------------- */
-  /* CONTEXT VALUE */
-  /* ------------------------------------------------------------- */
+  /* ------------------------------------------------------------
+     CONTEXT VALUE
+     ------------------------------------------------------------ */
 
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
+    isLoading,
     login,
     logout,
-    isLoading,
   };
 
   return (
@@ -131,11 +152,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-/* ------------------------------------------------------------- */
-/* HOOK */
-/* ------------------------------------------------------------- */
+/* ============================================================
+   HOOK
+   ============================================================ */
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");

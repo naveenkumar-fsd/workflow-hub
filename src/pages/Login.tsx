@@ -1,55 +1,123 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Workflow, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-// import { cn } from '@/lib/utils';
+import React, { useState, useEffect, FormEvent } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-// const roles: { value: UserRole; label: string; description: string }[] = [
-//   { value: 'employee', label: 'Employee', description: 'Submit and track your requests' },
-//   { value: 'manager', label: 'Manager', description: 'Approve team requests' },
-//   { value: 'hr', label: 'HR', description: 'Manage HR workflows' },
-//   { value: 'admin', label: 'Admin', description: 'Full system access' },
-// ];
+import { Workflow, Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react";
+
+/* ============================================================
+   LOGIN PAGE – FINAL JWT VERSION
+   ============================================================ */
 
 export default function Login() {
-  const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
-  const [email, setEmail] = useState('demo@workflowpro.com');
-  const [password, setPassword] = useState('demo123');
-  // const [selectedRole, setSelectedRole] = useState<UserRole>('employee');
-  const [showPassword, setShowPassword] = useState(false);
+  /* ------------------------------------------------------------
+     HOOKS
+     ------------------------------------------------------------ */
 
-  const handleSignIn = async () => {
-    try {
-      // Call login with only required parameters
-      await login(email, password);
-      // Navigate after successful login
-      navigate("/dashboard");
-    } catch (error) {
-      // Error is handled by AuthContext and can be shown to user if needed
-      console.error("Sign in failed:", error);
+  const navigate = useNavigate();
+  const { login, isLoading, isAuthenticated, user } = useAuth();
+
+  /* ------------------------------------------------------------
+     STATE
+     ------------------------------------------------------------ */
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  /* ------------------------------------------------------------
+     AUTO REDIRECT IF ALREADY LOGGED IN
+     ------------------------------------------------------------ */
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      redirectByRole(user.role);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, user]);
+
+  /* ------------------------------------------------------------
+     ROLE BASED REDIRECT
+     ------------------------------------------------------------ */
+
+  const redirectByRole = (role: string) => {
+    switch (role) {
+      case "ADMIN":
+        navigate("/admin", { replace: true });
+        break;
+
+      case "EMPLOYEE":
+        navigate("/dashboard", { replace: true });
+        break;
+
+      default:
+        navigate("/dashboard", { replace: true });
     }
   };
 
+  /* ------------------------------------------------------------
+     SUBMIT HANDLER
+     ------------------------------------------------------------ */
 
+  const handleSignIn = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!email || !password) {
+      setError("Please enter email and password");
+      return;
+    }
+
+    try {
+      await login(email, password);
+
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        redirectByRole(parsed.role);
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    } catch (err) {
+      console.error("[Login] Sign in failed", err);
+      setError("Invalid email or password");
+    }
+  };
+
+  /* ------------------------------------------------------------
+     RENDER
+     ------------------------------------------------------------ */
 
   return (
-   
     <div className="min-h-screen flex">
-      {/* Left Side - Branding */}
+      {/* ======================================================
+         LEFT SIDE – BRANDING
+         ====================================================== */}
       <div className="hidden lg:flex lg:w-1/2 hero-gradient relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-purple-500/20" />
+
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <Link to="/" className="flex items-center gap-3 text-foreground">
+          {/* Back link */}
+          <Link
+            to="/"
+            className="flex items-center gap-3 text-foreground hover:opacity-80"
+          >
             <ArrowLeft className="h-5 w-5" />
             <span className="text-sm font-medium">Back to home</span>
           </Link>
-          
+
+          {/* Branding */}
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-lg">
@@ -57,15 +125,19 @@ export default function Login() {
               </div>
               <span className="text-2xl font-bold">WorkflowPro</span>
             </div>
+
             <h1 className="text-4xl font-bold leading-tight">
-              Streamline your<br />
+              Streamline your <br />
               <span className="text-gradient">workflow approvals</span>
             </h1>
+
             <p className="text-lg text-muted-foreground max-w-md">
-              Join thousands of companies that trust WorkflowPro to manage their internal requests and approvals efficiently.
+              Securely manage internal requests, approvals, and workflows with
+              role-based access and real-time tracking.
             </p>
           </div>
 
+          {/* Stats */}
           <div className="flex items-center gap-8 text-sm text-muted-foreground">
             <div>
               <p className="text-2xl font-bold text-foreground">10k+</p>
@@ -83,7 +155,9 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
+      {/* ======================================================
+         RIGHT SIDE – LOGIN FORM
+         ====================================================== */}
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <Card className="w-full max-w-md border-0 shadow-none lg:border lg:shadow-lg">
           <CardHeader className="space-y-1 text-center lg:text-left">
@@ -93,14 +167,18 @@ export default function Login() {
               </div>
               <span className="text-xl font-bold">WorkflowPro</span>
             </div>
-            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+
+            <CardTitle className="text-2xl font-bold">
+              Welcome back
+            </CardTitle>
             <CardDescription>
               Sign in to your account to continue
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form className="space-y-4">
 
+          <CardContent>
+            <form className="space-y-4" onSubmit={handleSignIn}>
+              {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -113,12 +191,13 @@ export default function Login() {
                 />
               </div>
 
+              {/* Password */}
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -131,33 +210,45 @@ export default function Login() {
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
 
-               {/* modified to remove role selection */}
+              {/* Error */}
+              {error && (
+                <p className="text-sm text-destructive font-medium">
+                  {error}
+                </p>
+              )}
 
+              {/* Submit */}
               <Button
-                type="button"
+                type="submit"
                 className="w-full"
                 size="lg"
-                onClick={handleSignIn}
+                disabled={isLoading}
               >
-
                 {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Signing in...
-                  </div>
+                  </span>
                 ) : (
-                  'Sign in'
+                  "Sign in"
                 )}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <Link to="/" className="text-primary font-medium hover:underline">
+                Don&apos;t have an account?{" "}
+                <Link
+                  to="/"
+                  className="text-primary font-medium hover:underline"
+                >
                   Contact sales
                 </Link>
               </p>
@@ -166,6 +257,5 @@ export default function Login() {
         </Card>
       </div>
     </div>
-    
   );
 }

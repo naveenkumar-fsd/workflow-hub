@@ -1,32 +1,32 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8081",
-  withCredentials: true,
+  baseURL: "http://localhost:8081/api",
 });
 
-// 🔥 REQUEST INTERCEPTOR
+// 🔥 REQUEST INTERCEPTOR – JWT ATTACH
 api.interceptors.request.use(
   (config) => {
-    // 🔥 Do NOT attach token for login
-    if (!config.url?.includes("/api/auth/login")) {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-
-// OPTIONAL – RESPONSE LOG
+// 🔥 RESPONSE INTERCEPTOR – AUTH ERRORS
 api.interceptors.response.use(
   (res) => res,
   (error) => {
+    if (error.response?.status === 401) {
+      console.warn("[Axios] 401 Unauthorized – login expired");
+    }
     if (error.response?.status === 403) {
-      console.warn("[Axios] 403 Forbidden → access denied");
+      console.warn("[Axios] 403 Forbidden – no access");
     }
     return Promise.reject(error);
   }
