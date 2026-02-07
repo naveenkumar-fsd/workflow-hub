@@ -15,7 +15,6 @@ import {
   Filter,
   CheckCircle2,
   XCircle,
-  Clock,
   AlertTriangle,
   Loader2,
   Calendar,
@@ -67,37 +66,38 @@ export default function Approvals() {
   const [searchQuery, setSearchQuery] = useState("");
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
+  /* ================= HELPER: REFRESH ================= */
+
+  const refreshPendingApprovals = async () => {
+    const res = await getPendingApprovals();
+    const data = Array.isArray(res.data) ? res.data : [];
+
+    const mapped: ApprovalRequest[] = data.map((w: BackendWorkflow) => ({
+      id: String(w.id ?? ""),
+      title: w.title ?? "Untitled Request",
+      description: w.description ?? "",
+      type: String(w.type ?? "leave").toLowerCase(),
+      createdAt: w.createdAt ?? new Date().toISOString(),
+      createdBy: {
+        name: w.user?.name ?? "Unknown",
+        department: w.user?.department ?? "",
+      },
+      isOverdue: Boolean(w.isOverdue ?? false),
+    }));
+
+    setRequests(mapped);
+  };
+
   /* ================= FETCH ================= */
 
   useEffect(() => {
     const fetchApprovals = async () => {
       try {
         setLoading(true);
-
-        const res = await getPendingApprovals();
-        const data = Array.isArray(res) ? res : [];
-
-        const mapped: ApprovalRequest[] = data.map(
-          (w: BackendWorkflow) => ({
-            id: String(w.id ?? ""),
-            title: w.title ?? "Untitled Request",
-            description: w.description ?? "",
-            type: String(w.type ?? "leave").toLowerCase(),
-            createdAt: w.createdAt ?? new Date().toISOString(),
-            createdBy: {
-              name: w.user?.name ?? "Unknown",
-              department: w.user?.department ?? "",
-            },
-            isOverdue: Boolean(w.isOverdue ?? false),
-          })
-        );
-
-        setRequests(mapped);
+        await refreshPendingApprovals();
       } catch (err) {
         console.error("[Approvals] Fetch error:", err);
-        toast.error("Failed to load approvals", {
-          description: "Please try again later.",
-        });
+        toast.error("Failed to load approvals");
         setRequests([]);
       } finally {
         setLoading(false);
@@ -137,8 +137,8 @@ export default function Approvals() {
     setProcessingIds((p) => new Set(p).add(id));
 
     try {
-      await approveWorkflow(idNum);
-      setRequests((prev) => prev.filter((r) => r.id !== id));
+      await approveWorkflow(idNum);          // backend update
+      await refreshPendingApprovals();       // 🔥 SAFE REFRESH
       toast.success("Request approved");
     } catch (err) {
       console.error("[Approvals] Approve error:", err);
@@ -163,7 +163,7 @@ export default function Approvals() {
 
     try {
       await rejectWorkflow(idNum);
-      setRequests((prev) => prev.filter((r) => r.id !== id));
+      await refreshPendingApprovals();       // 🔥 SAFE REFRESH
       toast.success("Request rejected");
     } catch (err) {
       console.error("[Approvals] Reject error:", err);
