@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,19 +10,38 @@ import {
   Clock,
   ArrowRight,
   FileText,
+  CheckCircle2,
+  XCircle,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
-// Minimal request shape expected from backend
+/* ============================================================
+   TYPES
+   ============================================================ */
+
+export type RequestStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'draft'
+  | 'escalated';
+
 export interface MinimalRequest {
   id?: string;
   title?: string;
   description?: string;
-  status?: string;
+  status?: RequestStatus;
   createdAt?: string;
   type?: string;
+  lastActionBy?: string;
+  lastActionAt?: string;
 }
+
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
 
 const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   leave: Calendar,
@@ -38,14 +57,28 @@ const typeColors: Record<string, string> = {
   access: 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
 };
 
-const defaultTypeColor = 'bg-gray-50 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
+const statusColors: Record<RequestStatus, string> = {
+  pending: 'bg-warning/10 text-warning',
+  approved: 'bg-success/10 text-success',
+  rejected: 'bg-destructive/10 text-destructive',
+  draft: 'bg-muted text-muted-foreground',
+  escalated: 'bg-orange-100 text-orange-700',
+};
+
+/* ============================================================
+   PROPS
+   ============================================================ */
 
 interface RequestCardProps {
   request?: MinimalRequest | null;
   showActions?: boolean;
-  onApprove?: (id: string) => void;
-  onReject?: (id: string) => void;
+  onApprove?: (id: string) => Promise<void> | void;
+  onReject?: (id: string) => Promise<void> | void;
 }
+
+/* ============================================================
+   COMPONENT
+   ============================================================ */
 
 export function RequestCard({
   request,
@@ -53,114 +86,165 @@ export function RequestCard({
   onApprove,
   onReject,
 }: RequestCardProps) {
-  // Safe default for request object - never let undefined/null propagate
+  /* ------------------------------------------------------------
+     SAFE DATA
+     ------------------------------------------------------------ */
   const safeRequest: Required<MinimalRequest> = {
     id: request?.id ?? 'N/A',
     title: request?.title ?? 'Untitled Request',
     description: request?.description ?? '',
-    status: request?.status ?? 'unknown',
+    status: request?.status ?? 'pending',
     createdAt: request?.createdAt ?? new Date().toISOString(),
     type: request?.type ?? 'leave',
+    lastActionBy: request?.lastActionBy ?? '',
+    lastActionAt: request?.lastActionAt ?? '',
   };
 
-  // Select icon based on type, with fallback to FileText
+  const requestId = safeRequest.id;
+
+  /* ------------------------------------------------------------
+     LOCAL UI STATE (IMPORTANT 🔥)
+     ------------------------------------------------------------ */
+  const [localStatus, setLocalStatus] = useState<RequestStatus>(
+    safeRequest.status
+  );
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const Icon = typeIcons[safeRequest.type] || FileText;
+  const bgColor = typeColors[safeRequest.type] || 'bg-muted';
+  const statusColor = statusColors[localStatus];
 
-  // Select color based on type, with fallback
-  const bgColor = typeColors[safeRequest.type] || defaultTypeColor;
+  /* ------------------------------------------------------------
+     DATE FORMAT
+     ------------------------------------------------------------ */
+  const createdAgo = formatDistanceToNow(
+    new Date(safeRequest.createdAt),
+    { addSuffix: true }
+  );
 
-  // Safe date formatting with error handling
-  let formattedDate = '';
-  try {
-    if (safeRequest.createdAt) {
-      const date = new Date(safeRequest.createdAt);
-      if (!isNaN(date.getTime())) {
-        formattedDate = formatDistanceToNow(date, { addSuffix: true });
-      }
+  /* ------------------------------------------------------------
+     HANDLERS
+     ------------------------------------------------------------ */
+  const handleApprove = async () => {
+    if (!onApprove || isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+      await onApprove(requestId);
+
+      // 🔥 UX MAGIC
+      setLocalStatus('approved');
+    } catch (err) {
+      console.error('Approve failed', err);
+    } finally {
+      setIsProcessing(false);
     }
-  } catch {
-    // Silently handle date formatting errors
-    formattedDate = '';
-  }
+  };
 
-  // Safe locale string formatting with error handling
-  let localeDateString = '';
-  try {
-    if (safeRequest.createdAt) {
-      const date = new Date(safeRequest.createdAt);
-      if (!isNaN(date.getTime())) {
-        localeDateString = date.toLocaleString();
-      }
+  const handleReject = async () => {
+    if (!onReject || isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+      await onReject(requestId);
+
+      // 🔥 UX MAGIC
+      setLocalStatus('rejected');
+    } catch (err) {
+      console.error('Reject failed', err);
+    } finally {
+      setIsProcessing(false);
     }
-  } catch {
-    // Silently handle date formatting errors
-    localeDateString = '';
-  }
+  };
 
-  const requestId = safeRequest.id || 'unknown';
-  const isApprovalReady =
+  const showActionButtons =
     showActions &&
-    safeRequest.status === 'pending' &&
-    requestId !== 'unknown' &&
+    localStatus === 'pending' &&
     requestId !== 'N/A';
 
+  /* ============================================================
+     RENDER
+     ============================================================ */
+
   return (
-    <div className="bg-card rounded-xl border border-border p-4 transition-all duration-200 hover:shadow-md hover:border-primary/50">
+    <div
+      className={cn(
+        'bg-card rounded-xl border p-4 transition-all duration-200',
+        localStatus !== 'pending' && 'opacity-90'
+      )}
+    >
       <div className="flex items-start gap-4">
-        {/* Type Icon */}
-        <div className={cn('p-3 rounded-lg flex-shrink-0', bgColor)}>
+        {/* ICON */}
+        <div className={cn('p-3 rounded-lg', bgColor)}>
           <Icon className="h-5 w-5" />
         </div>
 
-        {/* Content */}
+        {/* CONTENT */}
         <div className="flex-1 min-w-0">
+          {/* HEADER */}
           <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-sm truncate">{safeRequest.title}</h3>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                {requestId}
-                {localeDateString && ` • ${localeDateString}`}
+            <div>
+              <h3 className="font-semibold text-sm truncate">
+                {safeRequest.title}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                ID: {requestId} • {createdAgo}
               </p>
             </div>
-            <Badge className="capitalize flex-shrink-0">{safeRequest.status}</Badge>
+
+            <Badge className={cn('capitalize', statusColor)}>
+              {localStatus}
+            </Badge>
           </div>
 
-          {/* Description */}
+          {/* DESCRIPTION */}
           {safeRequest.description && (
             <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
               {safeRequest.description}
             </p>
           )}
 
-          {/* Metadata */}
-          <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-            {formattedDate && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3 flex-shrink-0" />
-                {formattedDate}
+          {/* TIMELINE PREVIEW */}
+          {localStatus !== 'pending' && (
+            <div className="mt-3 text-xs text-muted-foreground flex items-center gap-2">
+              {localStatus === 'approved' ? (
+                <CheckCircle2 className="h-3 w-3 text-success" />
+              ) : (
+                <XCircle className="h-3 w-3 text-destructive" />
+              )}
+              <span>
+                {localStatus === 'approved'
+                  ? 'Approved'
+                  : 'Rejected'}{' '}
+                by Admin
               </span>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Actions */}
-          {isApprovalReady && (
+          {/* ACTIONS */}
+          {showActionButtons && (
             <div className="flex items-center gap-2 mt-4">
               <Button
                 size="sm"
-                variant="default"
-                onClick={() => onApprove?.(requestId)}
+                onClick={handleApprove}
+                disabled={isProcessing}
               >
-                Approve
+                {isProcessing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Approve'
+                )}
               </Button>
+
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => onReject?.(requestId)}
+                onClick={handleReject}
+                disabled={isProcessing}
               >
                 Reject
               </Button>
+
               <Link to={`/request/${requestId}`} className="ml-auto">
                 <Button size="sm" variant="ghost">
                   Details <ArrowRight className="h-4 w-4 ml-1" />
