@@ -54,7 +54,7 @@ export default function Login() {
   const redirectByRole = (role: string) => {
     switch (role) {
       case "ADMIN":
-        navigate("/admin", { replace: true });
+        navigate("/dashboard", { replace: true });
         break;
 
       case "EMPLOYEE":

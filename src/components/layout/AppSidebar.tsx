@@ -58,7 +58,7 @@ export function AppSidebar({ isCollapsed, onToggle }: AppSidebarProps) {
   if (!user) return null;
 
   // Filter menu items based on user role - ensure role is lowercase for comparison
-  const userRole = (user.role as UserRole).toLowerCase() as UserRole;
+  const userRole = user.role;
  const filteredNavItems = navItems.filter(item =>
   item.roles.includes(user.role)
 );

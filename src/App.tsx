@@ -53,7 +53,7 @@ const App = () => (
               }
             />
             
-            {/* Protected Routes - Employee, Manager, HR, Admin */}
+            {/* Protected Routes - EMPLOYEE, Manager, HR, ADMIN */}
             <Route
               path="/create-request"
               element={
@@ -63,6 +63,7 @@ const App = () => (
               }
             />
             <Route
+
               path="/my-requests"
               element={
                 <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN']}>
@@ -71,7 +72,7 @@ const App = () => (
               }
             />
             
-            {/* Protected Routes - Manager, Admin */}
+            {/* Protected Routes - Manager, ADMIN */}
             <Route
               path="/approvals"
               element={
@@ -97,7 +98,7 @@ const App = () => (
               }
             />
             
-            {/* Protected Routes - Admin Only */}
+            {/* Protected Routes - ADMIN Only */}
             <Route
               path="/users"
               element={

@@ -29,10 +29,9 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
-
-  // 🔥 ADD THIS (OPTIONAL)
   avatar?: string;
 }
+
 
 
 interface AuthContextType {
