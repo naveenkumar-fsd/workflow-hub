@@ -57,7 +57,7 @@ const App = () => (
             <Route
               path="/create-request"
               element={
-                <ProtectedRoute allowedRoles={['employee', 'manager', 'hr', 'admin']}>
+                <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN']}>
                   <CreateRequest />
                 </ProtectedRoute>
               }
@@ -65,7 +65,7 @@ const App = () => (
             <Route
               path="/my-requests"
               element={
-                <ProtectedRoute allowedRoles={['employee', 'manager', 'hr', 'admin']}>
+                <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN']}>
                   <MyRequests />
                 </ProtectedRoute>
               }
@@ -75,7 +75,7 @@ const App = () => (
             <Route
               path="/approvals"
               element={
-                <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <ProtectedRoute allowedRoles={[ 'ADMIN']}>
                   <Approvals />
                 </ProtectedRoute>
               }
@@ -83,7 +83,7 @@ const App = () => (
             <Route
               path="/all-requests"
               element={
-                <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <ProtectedRoute allowedRoles={[ 'ADMIN']}>
                   <Approvals />
                 </ProtectedRoute>
               }
@@ -91,7 +91,7 @@ const App = () => (
             <Route
               path="/analytics"
               element={
-                <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <ProtectedRoute allowedRoles={['ADMIN']}>
                   <Analytics />
                 </ProtectedRoute>
               }
@@ -101,7 +101,7 @@ const App = () => (
             <Route
               path="/users"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={['ADMIN']}>
                   <Users />
                 </ProtectedRoute>
               }
@@ -109,7 +109,7 @@ const App = () => (
             <Route
               path="/workflows"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={['ADMIN']}>
                   <Workflows />
                 </ProtectedRoute>
               }
@@ -117,7 +117,7 @@ const App = () => (
             <Route
               path="/templates"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={['ADMIN']}>
                   <Workflows />
                 </ProtectedRoute>
               }
@@ -125,7 +125,7 @@ const App = () => (
             <Route
               path="/audit-logs"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={['ADMIN']}>
                   <AuditLogs />
                 </ProtectedRoute>
               }
@@ -133,7 +133,7 @@ const App = () => (
             <Route
               path="/sla-settings"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={['ADMIN']}>
                   <Settings />
                 </ProtectedRoute>
               }

@@ -29,16 +29,17 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'My Requests', href: '/my-requests', icon: FileText, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Create Request', href: '/create-request', icon: PlusCircle, roles: ['employee'] },
-  { label: 'Approvals', href: '/approvals', icon: CheckSquare, roles: ['manager', 'admin'] },
-  { label: 'Analytics', href: '/analytics', icon: BarChart3, roles: ['manager', 'admin'] },
-  { label: 'Workflow Builder', href: '/workflows', icon: Workflow, roles: ['admin'] },
-  { label: 'Users & Roles', href: '/users', icon: Users, roles: ['admin'] },
-  { label: 'Audit Logs', href: '/audit-logs', icon: Shield, roles: ['admin'] },
-  { label: 'Settings', href: '/settings', icon: Settings, roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['EMPLOYEE', 'ADMIN'] },
+  { label: 'My Requests', href: '/my-requests', icon: FileText, roles: ['EMPLOYEE', 'ADMIN'] },
+  { label: 'Create Request', href: '/create-request', icon: PlusCircle, roles: ['EMPLOYEE'] },
+  { label: 'Approvals', href: '/approvals', icon: CheckSquare, roles: ['ADMIN'] },
+  { label: 'Analytics', href: '/analytics', icon: BarChart3, roles: ['ADMIN'] },
+  { label: 'Workflow Builder', href: '/workflows', icon: Workflow, roles: ['ADMIN'] },
+  { label: 'Users & Roles', href: '/users', icon: Users, roles: ['ADMIN'] },
+  { label: 'Audit Logs', href: '/audit-logs', icon: Shield, roles: ['ADMIN'] },
+  { label: 'Settings', href: '/settings', icon: Settings, roles: ['EMPLOYEE', 'ADMIN'] },
 ];
+
 
 interface AppSidebarProps {
   isCollapsed: boolean;
@@ -58,7 +59,9 @@ export function AppSidebar({ isCollapsed, onToggle }: AppSidebarProps) {
 
   // Filter menu items based on user role - ensure role is lowercase for comparison
   const userRole = (user.role as UserRole).toLowerCase() as UserRole;
-  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
+ const filteredNavItems = navItems.filter(item =>
+  item.roles.includes(user.role)
+);
 
   return (
     <aside
@@ -125,7 +128,8 @@ export function AppSidebar({ isCollapsed, onToggle }: AppSidebarProps) {
       <div className={cn('p-4', isCollapsed && 'flex justify-center')}>
         {isCollapsed ? (
           <Avatar className="h-8 w-8 cursor-pointer" onClick={handleLogout} title="Sign out">
-            <AvatarImage src={user.avatar} />
+            {user.avatar && <AvatarImage src={user.avatar} />}
+
             <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
               {user.name.split(' ').map(n => n[0]).join('')}
             </AvatarFallback>
@@ -133,7 +137,8 @@ export function AppSidebar({ isCollapsed, onToggle }: AppSidebarProps) {
         ) : (
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={user.avatar} />
+              {user.avatar && <AvatarImage src={user.avatar} />}
+
               <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
                 {user.name.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>

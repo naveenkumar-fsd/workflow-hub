@@ -25,11 +25,15 @@ console.log("🔥 AUTH CONTEXT VERSION = JWT CLEAN FINAL");
 export type UserRole = "ADMIN" | "EMPLOYEE";
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: UserRole;
+
+  // 🔥 ADD THIS (OPTIONAL)
+  avatar?: string;
 }
+
 
 interface AuthContextType {
   user: User | null;
@@ -98,7 +102,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       /* ---------------- USER ---------------- */
       const userData: User = {
-        id: data.id,
+        id: String(data.id),
         name: data.name,
         email: data.email,
         role: data.role, // ADMIN | EMPLOYEE
