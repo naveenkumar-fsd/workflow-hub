@@ -16,10 +16,12 @@ export interface WorkflowResponse {
   id: number;
   title: string;
   description: string;
-  type: WorkflowType;
-  status: WorkflowStatus;
+  type: string;
+  status: "pending" | "approved" | "rejected";
   createdAt: string;
+  approvedAt?: string | null; // 🔥 ADD THIS
 }
+
 
 export const getUserWorkflows = () => {
   return axiosInstance.get<WorkflowResponse[]>("/workflows/my");
