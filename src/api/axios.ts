@@ -4,7 +4,7 @@ const api = axios.create({
   baseURL: "http://localhost:8081/api",
 });
 
-// 🔥 REQUEST INTERCEPTOR – JWT ATTACH
+// ================= REQUEST =================
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -18,24 +18,29 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🔥 RESPONSE INTERCEPTOR – AUTH ERRORS
+// ================= RESPONSE =================
 api.interceptors.response.use(
-  (res) => res,
+  (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-  console.warn("[Axios] 401 Unauthorized – login expired");
+    const status = error.response?.status;
+    const url = error.config?.url || "";
 
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
+    // 🚫 DO NOT LOGOUT FOR AUTH ENDPOINTS
+    const isAuthEndpoint =
+      url.includes("/auth/login") ||
+      url.includes("/auth/register");
 
-  if (window.location.pathname !== "/login") {
-    window.location.href = "/login";
-  }
-}
+    if (status === 401 && !isAuthEndpoint) {
+      console.warn("[Axios] 401 Unauthorized – forcing logout");
 
-    if (error.response?.status === 403) {
-      console.warn("[Axios] 403 Forbidden – no access");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
+
     return Promise.reject(error);
   }
 );
