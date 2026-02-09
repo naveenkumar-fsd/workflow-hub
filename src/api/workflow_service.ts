@@ -16,7 +16,7 @@ export interface WorkflowResponse {
   id: number;
   title: string;
   description: string;
-  type: string;
+  type: WorkflowType;
   status: "pending" | "approved" | "rejected";
   createdAt: string;
   approvedAt?: string | null; // 🔥 ADD THIS

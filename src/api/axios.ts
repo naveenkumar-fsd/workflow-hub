@@ -23,8 +23,16 @@ api.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401) {
-      console.warn("[Axios] 401 Unauthorized – login expired");
-    }
+  console.warn("[Axios] 401 Unauthorized – login expired");
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+}
+
     if (error.response?.status === 403) {
       console.warn("[Axios] 403 Forbidden – no access");
     }
