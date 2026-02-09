@@ -26,8 +26,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // 2️⃣ Not logged in
   if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
-  }
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  return <Navigate to="/login" replace />;
+}
+
 
   // 3️⃣ Role check
   if (allowedRoles && !allowedRoles.includes(user.role)) {
