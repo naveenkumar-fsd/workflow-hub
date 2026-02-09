@@ -21,9 +21,7 @@ import { formatDistanceToNow } from "date-fns";
 import { getUserWorkflows, WorkflowResponse } from "@/api/workflow_service";
 import { RequestTimeline } from "@/components/requests/RequestTimeline";
 
-/* =====================================================
-   TYPES
-===================================================== */
+/* ================= TYPES ================= */
 
 type RequestStatus = "pending" | "approved" | "rejected";
 type RequestType = "leave" | "expense" | "asset" | "access";
@@ -38,57 +36,53 @@ interface RequestItem {
   approvedAt?: string | null;
 }
 
-/* =====================================================
-   COMPONENT
-===================================================== */
+/* ================= COMPONENT ================= */
 
 export default function MyRequests() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  /* =====================================================
-     FETCH DATA
-  ===================================================== */
+  /* ================= FETCH FUNCTION (🔥 KEY FIX) ================= */
+
+  const fetchRequests = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await getUserWorkflows();
+      const data = Array.isArray(res.data) ? res.data : [];
+
+      const mapped: RequestItem[] = data.map(
+        (r: WorkflowResponse) => ({
+          id: String(r.id),
+          title: r.title ?? "Untitled Request",
+          description: r.description ?? "",
+          type: (r.type ?? "leave") as RequestType,
+          status: (r.status ?? "pending") as RequestStatus,
+          createdAt: r.createdAt,
+          approvedAt: r.approvedAt ?? null,
+        })
+      );
+
+      setRequests(mapped);
+    } catch (err) {
+      const e = err as AxiosError;
+      console.error("[MyRequests] API error:", e);
+      setError("Failed to load requests. Please try again.");
+      setRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ================= USE EFFECT ================= */
 
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await getUserWorkflows();
-        const data = Array.isArray(res.data) ? res.data : [];
-
-        const mapped: RequestItem[] = data.map(
-          (r: WorkflowResponse) => ({
-            id: String(r.id),
-            title: r.title ?? "Untitled Request",
-            description: r.description ?? "",
-            type: (r.type ?? "leave") as RequestType,
-            status: (r.status ?? "pending") as RequestStatus,
-            createdAt: r.createdAt,
-            approvedAt: r.approvedAt ?? null,
-          })
-        );
-
-        setRequests(mapped);
-      } catch (err) {
-        const e = err as AxiosError;
-        console.error("[MyRequests] API error:", e);
-        setError("Failed to load requests. Please try again.");
-        setRequests([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRequests();
   }, []);
 
-  /* =====================================================
-     UI HELPERS
-  ===================================================== */
+  /* ================= UI HELPERS ================= */
 
   const statusColor: Record<RequestStatus, string> = {
     pending: "bg-yellow-100 text-yellow-800",
@@ -103,13 +97,10 @@ export default function MyRequests() {
     access: "Access",
   };
 
-  /* =====================================================
-     REQUEST CARD
-  ===================================================== */
+  /* ================= CARD ================= */
 
   const RequestCard = ({ r }: { r: RequestItem }) => (
     <div className="bg-card border rounded-lg p-4 space-y-4">
-      {/* HEADER */}
       <div className="flex justify-between items-start gap-4">
         <div>
           <h3 className="font-semibold">{r.title}</h3>
@@ -132,16 +123,13 @@ export default function MyRequests() {
 
         <div className="flex flex-col gap-2 items-end">
           <Badge variant="outline">{typeLabel[r.type]}</Badge>
-          <Badge
-            variant="outline"
-            className={statusColor[r.status]}
-          >
+          <Badge variant="outline" className={statusColor[r.status]}>
             {r.status.toUpperCase()}
           </Badge>
         </div>
       </div>
 
-      {/* 🔥 STATUS TIMELINE */}
+      {/* 🔥 TIMELINE */}
       <RequestTimeline
         status={r.status.toUpperCase() as
           | "PENDING"
@@ -153,14 +141,11 @@ export default function MyRequests() {
     </div>
   );
 
-  /* =====================================================
-     RENDER
-  ===================================================== */
+  /* ================= RENDER ================= */
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* HEADER */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold">My Requests</h1>
@@ -177,17 +162,13 @@ export default function MyRequests() {
           </Link>
         </div>
 
-        {/* LOADING */}
         {loading && (
           <div className="text-center py-16">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-            <p className="text-muted-foreground">
-              Loading requests...
-            </p>
+            <p className="text-muted-foreground">Loading requests...</p>
           </div>
         )}
 
-        {/* ERROR */}
         {error && !loading && (
           <div className="flex gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
             <AlertCircle className="h-5 w-5 text-destructive" />
@@ -195,7 +176,6 @@ export default function MyRequests() {
           </div>
         )}
 
-        {/* CONTENT */}
         {!loading && !error && (
           <>
             {requests.length === 0 ? (
@@ -209,15 +189,9 @@ export default function MyRequests() {
               <Tabs defaultValue="all">
                 <TabsList className="grid grid-cols-4 max-w-md">
                   <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="pending">
-                    Pending
-                  </TabsTrigger>
-                  <TabsTrigger value="approved">
-                    Approved
-                  </TabsTrigger>
-                  <TabsTrigger value="rejected">
-                    Rejected
-                  </TabsTrigger>
+                  <TabsTrigger value="pending">Pending</TabsTrigger>
+                  <TabsTrigger value="approved">Approved</TabsTrigger>
+                  <TabsTrigger value="rejected">Rejected</TabsTrigger>
                 </TabsList>
 
                 {["all", "pending", "approved", "rejected"].map(
@@ -230,14 +204,10 @@ export default function MyRequests() {
                       {requests
                         .filter(
                           (r) =>
-                            tab === "all" ||
-                            r.status === tab
+                            tab === "all" || r.status === tab
                         )
                         .map((r) => (
-                          <RequestCard
-                            key={r.id}
-                            r={r}
-                          />
+                          <RequestCard key={r.id} r={r} />
                         ))}
                     </TabsContent>
                   )

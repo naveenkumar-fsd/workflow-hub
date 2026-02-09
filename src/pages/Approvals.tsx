@@ -69,6 +69,7 @@ export default function Approvals() {
   /* ================= HELPER: REFRESH ================= */
 
   const refreshPendingApprovals = async () => {
+  try {
     const res = await getPendingApprovals();
     const data = Array.isArray(res.data) ? res.data : [];
 
@@ -80,13 +81,19 @@ export default function Approvals() {
       createdAt: w.createdAt ?? new Date().toISOString(),
       createdBy: {
         name: w.user?.name ?? "Unknown",
-        department: w.user?.department ?? "",
+        department: w.user?.department || "N/A",
       },
       isOverdue: Boolean(w.isOverdue ?? false),
     }));
 
     setRequests(mapped);
-  };
+  } catch (err) {
+    console.error("[Approvals] Refresh error:", err);
+    toast.error("Failed to refresh approvals");
+    setRequests([]);
+  }
+};
+
 
   /* ================= FETCH ================= */
 
@@ -128,6 +135,7 @@ export default function Approvals() {
   /* ================= ACTIONS ================= */
 
   const handleApprove = async (id: string) => {
+    if (processingIds.has(id)) return;
     const idNum = Number(id);
     if (!Number.isFinite(idNum)) {
       toast.error("Invalid request id");
@@ -208,9 +216,10 @@ export default function Approvals() {
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                {formatDistanceToNow(new Date(r.createdAt), {
-                  addSuffix: true,
-                })}
+                {r.createdAt
+  ? formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })
+  : "Unknown date"}
+
               </span>
               <span>ID: {r.id}</span>
             </div>
