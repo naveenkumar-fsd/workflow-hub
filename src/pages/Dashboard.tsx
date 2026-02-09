@@ -253,7 +253,8 @@ export default function Dashboard() {
             title: r.title ?? "Untitled Request",
             description: r.description ?? "",
             type: (r.type ?? "leave") as RequestType,
-            status: (r.status ?? "pending") as RequestStatus,
+            status: (r.status ?? "PENDING").toLowerCase() as RequestStatus,
+
             createdAt: r.createdAt,
             priority: "medium",
           })
