@@ -1,4 +1,4 @@
-import axiosInstance from "./axios";
+import axios from "axios";
 
 // ================================
 // Types
@@ -12,16 +12,19 @@ export interface LoginResponse {
 }
 
 // ================================
+// AUTH AXIOS (NO INTERCEPTOR)
+// ================================
+const authApi = axios.create({
+  baseURL: "http://localhost:8081/api",
+});
+
+// ================================
 // LOGIN
 // ================================
 export const loginUser = async (data: {
   email: string;
   password: string;
 }): Promise<LoginResponse> => {
-
-  const response = await axiosInstance.post("/auth/login", data);
-
-  // 🔥 ONLY return response data
-  // 🔥 localStorage handling must be in AuthContext
+  const response = await authApi.post("/auth/login", data);
   return response.data;
 };
