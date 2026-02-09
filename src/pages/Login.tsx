@@ -80,19 +80,14 @@ export default function Login() {
     }
 
     try {
-      await login(email, password);
+  await login(email, password);
+  // ❌ NO navigate here
+  // redirect handled by useEffect
+} catch (err) {
+  console.error("[Login] Sign in failed", err);
+  setError("Invalid email or password");
+}
 
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        redirectByRole(parsed.role);
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
-    } catch (err) {
-      console.error("[Login] Sign in failed", err);
-      setError("Invalid email or password");
-    }
   };
 
   /* ------------------------------------------------------------
