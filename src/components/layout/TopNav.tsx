@@ -29,9 +29,8 @@ export function TopNav({ onMenuClick, isMobile }: TopNavProps) {
   if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
-      
-      {/* Left side */}
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-card px-4 lg:px-6">
+      {/* Left */}
       <div className="flex items-center gap-4">
         {isMobile && (
           <Button variant="ghost" size="icon" onClick={onMenuClick}>
@@ -42,32 +41,27 @@ export function TopNav({ onMenuClick, isMobile }: TopNavProps) {
         <div className="hidden md:flex relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search requests, users..."
+            placeholder="Search..."
             className="w-80 pl-9 bg-secondary/50 border-0 focus-visible:ring-1"
           />
         </div>
       </div>
 
-      {/* Right side */}
+      {/* Right */}
       <div className="flex items-center gap-4">
-        
-        {/* 🔔 REAL NOTIFICATION BELL ONLY */}
+        {/* ✅ ONLY ONE REAL BELL */}
         <NotificationBell />
 
-        {/* 👤 USER MENU */}
+        {/* User */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 px-2">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={user.avatar} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                  {user.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
+                <AvatarFallback>
+                  {user.name.split(" ").map(n => n[0]).join("")}
                 </AvatarFallback>
               </Avatar>
-
               <div className="hidden lg:flex flex-col items-start">
                 <span className="text-sm font-medium">{user.name}</span>
                 <span className="text-xs text-muted-foreground capitalize">
@@ -77,24 +71,16 @@ export function TopNav({ onMenuClick, isMobile }: TopNavProps) {
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile Settings</DropdownMenuItem>
-            <DropdownMenuItem>Preferences</DropdownMenuItem>
-            <DropdownMenuItem>Help & Support</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="text-destructive"
-            >
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
       </div>
     </header>
   );
-}
-      
+} 
+ 
