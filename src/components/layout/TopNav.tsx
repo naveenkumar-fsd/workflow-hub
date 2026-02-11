@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Bell, Search, Menu } from 'lucide-react';
+import { Search, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,8 +13,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockNotifications } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+import NotificationBell from "@/components/Notification/NotificationBell";
+
 
 interface TopNavProps {
   onMenuClick?: () => void;
@@ -23,8 +24,6 @@ interface TopNavProps {
 
 export function TopNav({ onMenuClick, isMobile }: TopNavProps) {
   const { user, logout } = useAuth();
-  const [notifications] = useState(mockNotifications);
-  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   // Wrap logout in useCallback to ensure stable reference
   const handleLogout = useCallback(() => {
@@ -53,53 +52,10 @@ export function TopNav({ onMenuClick, isMobile }: TopNavProps) {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
-        {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel className="flex justify-between items-center">
-              <span>Notifications</span>
-              {unreadCount > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {unreadCount} new
-                </Badge>
-              )}
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {notifications.slice(0, 5).map((notification) => (
-              <DropdownMenuItem
-                key={notification.id}
-                className={cn(
-                  'flex flex-col items-start gap-1 p-3 cursor-pointer',
-                  !notification.isRead && 'bg-accent/50'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  {!notification.isRead && (
-                    <span className="h-2 w-2 rounded-full bg-primary pulse-dot" />
-                  )}
-                  <span className="font-medium text-sm">{notification.title}</span>
-                </div>
-                <span className="text-xs text-muted-foreground line-clamp-1">
-                  {notification.message}
-                </span>
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="justify-center text-primary font-medium">
-              View all notifications
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        
+        {/* Real Notification Bell */}
+          <NotificationBell />
+
 
         {/* User Menu */}
         <DropdownMenu>
