@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { AppSidebar } from './AppSidebar';
-import { TopNav } from './TopNav';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { AppSidebar } from "./AppSidebar";
+import { TopNav } from "./TopNav";
+import { cn } from "@/lib/utils";
+import NotificationBell from "@/components/Notification/NotificationBell";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
-
-
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -32,7 +31,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background" data-role={user?.role ?? 'guest'}>
+    <div
+      className="min-h-screen bg-background"
+      data-role={user?.role ?? "guest"}
+    >
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <AppSidebar
@@ -59,14 +61,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main Content */}
       <div
         className={cn(
-          'min-h-screen transition-all duration-300',
-          sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+          "min-h-screen transition-all duration-300",
+          sidebarCollapsed ? "lg:ml-16" : "lg:ml-64"
         )}
       >
-        <TopNav
-          isMobile
-          onMenuClick={() => setMobileMenuOpen(true)}
-        />
+        {/* 🔥 Top Navigation */}
+        <div className="flex items-center justify-between px-4 lg:px-6 py-3 border-b bg-card">
+          <TopNav
+            isMobile
+            onMenuClick={() => setMobileMenuOpen(true)}
+          />
+
+          {/* 🔔 Notification Bell */}
+          <div className="flex items-center gap-4">
+            <NotificationBell />
+          </div>
+        </div>
+
+        {/* Page Content */}
         <main className="p-4 lg:p-6">
           {children}
         </main>

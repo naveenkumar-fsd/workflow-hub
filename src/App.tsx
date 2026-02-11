@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 // Pages
 import Landing from "./pages/Landing";
@@ -26,125 +27,124 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            
-            {/* Protected Routes - Any authenticated user */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Protected Routes - EMPLOYEE, Manager, HR, ADMIN */}
-            <Route
-              path="/create-request"
-              element={
-                <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN']}>
-                  <CreateRequest />
-                </ProtectedRoute>
-              }
-            />
-            <Route
+      <NotificationProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
 
-              path="/my-requests"
-              element={
-                <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN']}>
-                  <MyRequests />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Protected Routes - Manager, ADMIN */}
-            <Route
-              path="/approvals"
-              element={
-                <ProtectedRoute allowedRoles={[ 'ADMIN']}>
-                  <Approvals />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/all-requests"
-              element={
-                <ProtectedRoute allowedRoles={[ 'ADMIN']}>
-                  <Approvals />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/analytics"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <Analytics />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Protected Routes - ADMIN Only */}
-            <Route
-              path="/users"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <Users />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/workflows"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <Workflows />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/templates"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <Workflows />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/audit-logs"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <AuditLogs />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/sla-settings"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
+
+              {/* Protected Routes - Any authenticated user */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Employee + Admin */}
+              <Route
+                path="/create-request"
+                element={
+                  <ProtectedRoute allowedRoles={["EMPLOYEE", "ADMIN"]}>
+                    <CreateRequest />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/my-requests"
+                element={
+                  <ProtectedRoute allowedRoles={["EMPLOYEE", "ADMIN"]}>
+                    <MyRequests />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin Only */}
+              <Route
+                path="/approvals"
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    <Approvals />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/all-requests"
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    <Approvals />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/analytics"
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    <Analytics />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/users"
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    <Users />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/workflows"
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    <Workflows />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/audit-logs"
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    <AuditLogs />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/sla-settings"
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </NotificationProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
