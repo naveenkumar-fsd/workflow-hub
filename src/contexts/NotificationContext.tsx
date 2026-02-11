@@ -1,8 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import {
-  getMyNotifications,
-  NotificationResponse,
-} from "@/api/notification_service";
+import { getMyNotifications } from "@/api/notification_service";
+import { useAuth } from "@/contexts/AuthContext";
+
+export interface NotificationResponse {
+  id: number;
+  message: string;
+  readStatus: boolean;
+  createdAt: string;
+}
 
 interface NotificationContextType {
   notifications: NotificationResponse[];
@@ -17,30 +22,33 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 export const NotificationProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<
-    NotificationResponse[]
-  >([]);
+  const { isAuthenticated } = useAuth();
+  const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
 
   const fetchNotifications = async () => {
+    if (!isAuthenticated) return;
+
     try {
       const res = await getMyNotifications();
       setNotifications(res.data);
     } catch (err) {
-      console.error("Notification fetch failed", err);
+      console.warn("Notification fetch failed");
     }
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setNotifications([]);
+      return;
+    }
+
     fetchNotifications();
 
-    // 🔁 Poll every 20 sec
     const interval = setInterval(fetchNotifications, 20000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated]);
 
-  const unreadCount = notifications.filter(
-    (n) => !n.readStatus
-  ).length;
+  const unreadCount = notifications.filter(n => !n.readStatus).length;
 
   return (
     <NotificationContext.Provider

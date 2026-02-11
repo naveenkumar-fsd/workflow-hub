@@ -39,14 +39,12 @@ export interface Request {
 }
 
 export interface Notification {
-  id: string;
-  title: string;
+  id: number;
   message: string;
-  type: 'approval' | 'update' | 'escalation' | 'info';
-  isRead: boolean;
+  readStatus: boolean;
   createdAt: string;
-  requestId?: string;
 }
+
 
 export interface Department {
   id: string;
@@ -177,43 +175,7 @@ export const mockRequests: Request[] = [
 ];
 
 // Mock Notifications
-export const mockNotifications: Notification[] = [
-  {
-    id: 'NOT-001',
-    title: 'New Approval Required',
-    message: 'Alex Turner submitted a laptop request requiring your approval',
-    type: 'approval',
-    isRead: false,
-    createdAt: '2025-01-29T11:00:00Z',
-    requestId: 'REQ-003',
-  },
-  {
-    id: 'NOT-002',
-    title: 'Request Approved',
-    message: 'Your expense request has been approved by Sarah Johnson',
-    type: 'update',
-    isRead: false,
-    createdAt: '2025-01-26T14:00:00Z',
-    requestId: 'REQ-002',
-  },
-  {
-    id: 'NOT-003',
-    title: 'SLA Breach Warning',
-    message: 'Request REQ-003 is approaching SLA deadline',
-    type: 'escalation',
-    isRead: true,
-    createdAt: '2025-01-29T10:00:00Z',
-    requestId: 'REQ-003',
-  },
-  {
-    id: 'NOT-004',
-    title: 'System Maintenance',
-    message: 'Scheduled maintenance on Feb 1st, 2-4 AM UTC',
-    type: 'info',
-    isRead: true,
-    createdAt: '2025-01-28T09:00:00Z',
-  },
-];
+
 
 // Mock Departments
 export const mockDepartments: Department[] = [
@@ -234,9 +196,10 @@ export const mockWorkflows: Workflow[] = [
     requestType: 'leave',
     isActive: true,
     steps: [
-      { id: 'S1', name: 'Manager Approval', role: 'manager', order: 1, isRequired: true, slaHours: 24 },
-      { id: 'S2', name: 'HR Review', role: 'hr', order: 2, isRequired: true, slaHours: 48 },
-    ],
+  { id: 'S1', name: 'Manager Approval', role: 'ADMIN', order: 1, isRequired: true, slaHours: 24 },
+  { id: 'S2', name: 'HR Review', role: 'ADMIN', order: 2, isRequired: true, slaHours: 48 },
+],
+
   },
   {
     id: 'WF-002',
@@ -245,9 +208,10 @@ export const mockWorkflows: Workflow[] = [
     requestType: 'expense',
     isActive: true,
     steps: [
-      { id: 'S1', name: 'Manager Approval', role: 'manager', order: 1, isRequired: true, slaHours: 24 },
-      { id: 'S2', name: 'Finance Review', role: 'custom', order: 2, isRequired: true, slaHours: 48 },
-    ],
+  { id: 'S1', name: 'Manager Approval', role: 'ADMIN', order: 1, isRequired: true, slaHours: 24 },
+  { id: 'S2', name: 'HR Review', role: 'ADMIN', order: 2, isRequired: true, slaHours: 48 },
+],
+
   },
   {
     id: 'WF-003',
@@ -256,9 +220,10 @@ export const mockWorkflows: Workflow[] = [
     requestType: 'asset',
     isActive: true,
     steps: [
-      { id: 'S1', name: 'Manager Approval', role: 'manager', order: 1, isRequired: true, slaHours: 24 },
-      { id: 'S2', name: 'IT Admin Review', role: 'admin', order: 2, isRequired: true, slaHours: 72 },
-    ],
+  { id: 'S1', name: 'Manager Approval', role: 'ADMIN', order: 1, isRequired: true, slaHours: 24 },
+  { id: 'S2', name: 'HR Review', role: 'ADMIN', order: 2, isRequired: true, slaHours: 48 },
+],
+
   },
 ];
 
