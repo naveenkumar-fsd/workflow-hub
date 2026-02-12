@@ -147,7 +147,7 @@ export default function Approvals() {
     try {
       await approveWorkflow(idNum);          // backend update
       await refreshPendingApprovals();       // 🔥 SAFE REFRESH
-      toast.success("Request approved");
+      toast.success("Request approved & Email sent successfully");
     } catch (err) {
       console.error("[Approvals] Approve error:", err);
       toast.error("Failed to approve request");
@@ -172,7 +172,7 @@ export default function Approvals() {
     try {
       await rejectWorkflow(idNum);
       await refreshPendingApprovals();       // 🔥 SAFE REFRESH
-      toast.success("Request rejected");
+      toast.success("Request rejected & Email sent successfully");
     } catch (err) {
       console.error("[Approvals] Reject error:", err);
       toast.error("Failed to reject request");
