@@ -86,15 +86,6 @@ workflow-hub
 
 ---
 
-# ⚙️ Backend Setup
-
-## 1️⃣ Create Database
-
-```sql
-CREATE DATABASE workflowhub;
-
----
-
 # 🚀 Future Enhancements
 
 Docker Deployment
@@ -106,6 +97,8 @@ Swagger API Documentation
 Pagination & Advanced Filtering
 
 CI/CD Pipeline
+
+---
 
 # Author
 
