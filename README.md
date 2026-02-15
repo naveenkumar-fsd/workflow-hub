@@ -88,18 +88,19 @@ workflow-hub
 
 # 🚀 Future Enhancements
 
-Docker Deployment
+ - Docker Deployment
 
-Production Deployment
+ - Production Deployment
 
-Swagger API Documentation
+ - Swagger API Documentation
 
-Pagination & Advanced Filtering
+ - Pagination & Advanced Filtering
 
-CI/CD Pipeline
+ - CI/CD Pipeline
 
 ---
 
 # Author
 
 Naveenkumar M
+Java Full Stack Developer
